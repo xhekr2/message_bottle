@@ -1,0 +1,7 @@
+# 2026-11-11 14:10:07
+> GET /api/inbox (ichk01)
+[{"archiveId":9,"letterId":25,"senderUsername":null,"anonymous":true,"preview":"integration check anonymous","sentAt":"2026-11-11T13:57:21.445511","archivedAt":"2026-11-11T14:09:41.968289","replied":false}]
+< HTTP 200
+> GET /api/sent (ichk02, 보낸 사람 기록)
+[{"id":25,"receiverUsername":"ichk01","anonymous":true,"preview":"integration check anonymous","sentAt":"2026-11-11T13:57:21.445511"},{"id":24,"receiverUsername":"ichk01","anonymous":false,"preview":"integration check letter three","sentAt":"2026-11-11T13:57:21.340065"},{"id":23,"receiverUsername":"ichk01","anonymous":false,"preview":"integration check letter two","sentAt":"2026-11-11T13:57:21.240939"},{"id":22,"receiverUsername":"ichk01","anonymous":false,"preview":"integration check letter one","sentAt":"2026-11-11T13:57:21.131865"}]
+< HTTP 200

@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Message Bottle 시안</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap">
+  <style>
+:root {
+  --primary: #0B5FA5;
+  --bg: #F7FBFE;
+  --text: #12263A;
+  --muted: #5A6B7B;
+  --paper: #FFF8E7;
+  --accent: #1E8E7E;
+  --danger: #B3261E;
+  --sea-top: #CBE9F7;
+  --sea-bottom: #2F7FB8;
+  --line: #D6E3EE;
+  --r: 12px;
+  /* 시안 페이지(폰 바깥) 색. 폰 화면 안은 앱의 라이트 화면이라 위 토큰을 그대로 쓴다 */
+  --c-bg: #E9EEF3;
+  --c-surface: #FFFFFF;
+  --c-text: #12263A;
+  --c-muted: #5A6B7B;
+  --c-line: #D6E3EE;
+  --c-chip: #F4F8FB;
+  --c-chip-hover: #E6F0F8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-bg: #0E1822; --c-surface: #16232F; --c-text: #E6EEF5; --c-muted: #9FB1C1;
+    --c-line: #2B3C4A; --c-chip: #1E2E3B; --c-chip-hover: #2A3E4F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --c-bg: #0E1822; --c-surface: #16232F; --c-text: #E6EEF5; --c-muted: #9FB1C1;
+  --c-line: #2B3C4A; --c-chip: #1E2E3B; --c-chip-hover: #2A3E4F;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  font-family: "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  color: var(--c-text);
+  background: var(--c-bg);
+}
+button, input, textarea { font: inherit; color: inherit; }
+svg { width: 22px; height: 22px; flex: none; }
+
+/* page layout */
+.stage { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; justify-content: center; padding-block: 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.panel { width: 300px; max-width: 100%; min-width: 0; background: var(--c-surface); border-radius: 16px; padding: 20px; box-shadow: 0 2px 12px rgba(18,38,58,.12); }
+.panel h1 { font-size: 20px; margin: 0 0 8px; }
+.panel h2 { font-size: 14px; margin: 20px 0 8px; }
+.muted { color: var(--c-muted); }
+.small { font-size: 13px; line-height: 1.5; }
+.panel ul { padding-left: 18px; margin: 0; }
+.jump { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.jump button, .android-back {
+  min-height: 44px; border: 1px solid var(--c-line); background: var(--c-chip); color: var(--c-text); border-radius: 10px; cursor: pointer; font-size: 13px;
+}
+.jump button:hover, .android-back:hover { background: var(--c-chip-hover); }
+.android-back { width: 100%; margin-bottom: 8px; }
+.check { display: flex; align-items: center; gap: 8px; min-height: 40px; font-size: 14px; }
+.phone-wrap { width: 410px; height: 864px; flex: none; }
+.phone { width: 410px; height: 864px; padding: 10px; border-radius: 52px; background: #1B2733; box-shadow: 0 20px 50px rgba(18,38,58,.3); transform-origin: top left; }
+.screen { position: relative; width: 390px; height: 844px; border-radius: 42px; overflow: hidden; background: var(--bg); color: var(--text); font-size: 16px; }
+.statusbar { position: absolute; z-index: 30; top: 0; left: 0; right: 0; height: 40px; padding: 14px 28px 0; display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; pointer-events: none; }
+
+/* shared */
+.view { position: absolute; inset: 0; padding-top: 40px; }
+.btn { min-height: 48px; padding: 0 20px; border-radius: var(--r); border: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; }
+.btn.primary { background: var(--primary); color: #fff; }
+.btn.accent { background: var(--accent); color: #fff; }
+.btn.danger { background: var(--danger); color: #fff; }
+.btn.ghost { background: transparent; color: var(--primary); border: 1px solid var(--line); }
+.btn[disabled] { opacity: .55; cursor: default; }
+.err { color: var(--danger); font-size: 13px; min-height: 0; margin: 4px 0 0; }
+.err:empty { display: none; }
+.err::before { content: "⚠ "; }
+.spin { width: 18px; height: 18px; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.icon-btn { width: 48px; height: 48px; border: 0; border-radius: 50%; background: rgba(255,255,255,.7); display: grid; place-items: center; cursor: pointer; }
+.danger-btn { color: var(--danger); }
+
+/* S00 */
+.login { background: linear-gradient(var(--sea-top), var(--bg) 55%); display: flex; flex-direction: column; justify-content: center; padding: 40px 28px 28px; }
+.login-hero { text-align: center; margin-bottom: 28px; }
+.hero-bottle { width: 64px; height: 110px; animation: bob 4s ease-in-out infinite; }
+.login-hero h2 { font-size: 26px; margin: 8px 0 4px; }
+.login-hero p { margin: 0; color: var(--muted); }
+.form { display: flex; flex-direction: column; gap: 14px; }
+.form label, .f { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; }
+.form input, .f input, .f textarea { min-height: 48px; padding: 10px 14px; border: 1px solid #A9BCCB; border-radius: var(--r); background: #fff; font-weight: 400; font-size: 16px; }
+.f textarea { resize: none; line-height: 1.5; }
+input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px solid #7DB8E8; outline-offset: 2px; }
+
+/* S01 */
+.sea { background: linear-gradient(180deg, var(--sea-top) 0%, #7FBDE3 45%, var(--sea-bottom) 100%); overflow: hidden; }
+.glint { position: absolute; inset: 0; background: radial-gradient(circle at 78% 12%, rgba(255,255,255,.75), rgba(255,255,255,0) 38%); animation: glint 6s ease-in-out infinite alternate; }
+@keyframes glint { to { opacity: .55; } }
+.bottles { position: absolute; inset: 0; }
+.bottle { position: absolute; width: 56px; height: 100px; border: 0; background: none; padding: 0; cursor: pointer; animation: bob 4s ease-in-out infinite; filter: drop-shadow(0 6px 6px rgba(18,38,58,.25)); }
+.bottle svg { width: 100%; height: 100%; }
+.bottle:hover { transform: scale(1.1); }
+.bottle::after { content: ""; position: absolute; inset: -6px; }
+@keyframes bob { 0%,100% { transform: translateY(0) rotate(var(--rot, 0deg)); } 50% { transform: translateY(calc(var(--bob, 10px) * -1)) rotate(calc(var(--rot, 0deg) + 3deg)); } }
+/* 파도: 캔버스에 그린다. 굽이치는 정도와 속도가 시간에 따라 달라진다(app 아래 waves 스크립트) */
+.waves { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 230px; pointer-events: none; }
+/* 5초 동안 아무 행동이 없으면 UI를 숨기고 유리병과 파도만 남긴다. 화면을 건드리면 바로 돌아온다 */
+.sea .topright, .sea .fab, .sea .empty { transition: opacity .8s ease; }
+.sea.idle .topright, .sea.idle .fab, .sea.idle .empty { opacity: 0; pointer-events: none; }
+/* 유리병이 사라질 때: 병이 가라앉으며 흐려지고 그 자리에서 물결이 번진다 */
+.vanish { position: absolute; z-index: 4; width: 0; height: 0; pointer-events: none; }
+.vanish .flat { position: absolute; left: 0; top: 0; width: 0; height: 0; transform: scaleY(.5); }
+.vanish .ring { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 0 14px rgba(255,255,255,.55), inset 0 0 10px rgba(255,255,255,.35); opacity: 0; animation: ripple 2s ease-out forwards; }
+.vanish .r2 { animation-delay: .3s; }
+.vanish .r3 { animation-delay: .6s; }
+@keyframes ripple { 0% { transform: scale(.25); opacity: .95; } 60% { opacity: .4; } 100% { transform: scale(7.5); opacity: 0; } }
+.vanish .ghost { position: absolute; left: -28px; top: -50px; width: 56px; height: 100px; animation: sink .95s ease-in forwards; filter: drop-shadow(0 6px 6px rgba(18,38,58,.25)); }
+@keyframes sink { 0% { transform: translateY(0) scale(1) rotate(0); opacity: 1; } 100% { transform: translateY(26px) scale(.55) rotate(14deg); opacity: 0; } }
+.topright { position: absolute; z-index: 5; top: 52px; right: 12px; display: flex; flex-direction: column; gap: 8px; }
+.chip { min-height: 48px; padding: 0 14px; border: 0; border-radius: 24px; background: rgba(255,255,255,.88); color: var(--text); display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(18,38,58,.15); }
+.fab { position: absolute; z-index: 5; right: 20px; bottom: 28px; min-height: 56px; padding: 0 22px; border: 0; border-radius: 28px; background: var(--primary); color: #fff; display: flex; align-items: center; gap: 10px; font-weight: 700; cursor: pointer; border: 3px solid #fff; box-shadow: 0 6px 16px rgba(10,30,50,.4); }
+.empty { position: absolute; z-index: 3; left: 24px; right: 24px; top: 300px; text-align: center; color: #0E3150; }
+.empty p { font-size: 18px; font-weight: 700; margin: 8px 0 4px; }
+.empty small { font-size: 13px; }
+
+/* popups & sheet */
+.scrim { position: absolute; z-index: 20; inset: 0; background: rgba(10,30,50,.45); display: flex; align-items: center; justify-content: center; }
+.popup { width: 340px; max-height: 580px; background: var(--bg); border-radius: 24px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+.pop-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 8px 8px 20px; }
+.pop-head h3 { margin: 0; font-size: 22px; }
+.pop-close { min-height: 48px; padding: 0 14px; border: 0; background: none; color: var(--primary); font-weight: 700; cursor: pointer; }
+.pop-hint { margin: 0 20px 8px; font-size: 13px; color: var(--muted); }
+/* 카드가 많아져도 줄어들지 않고, 팝업 높이가 최대치에 닿으면 목록이 스크롤된다 */
+.list { list-style: none; margin: 0; padding: 0 12px 16px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; }
+.list > li { flex: 0 0 auto; }
+.pop-head, .pop-hint { flex: none; }
+.card { background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: block; width: 100%; text-align: left; cursor: pointer; min-height: 72px; }
+.card b { font-size: 15px; }
+.card .meta { color: var(--muted); font-size: 13px; margin-left: 6px; }
+.card .snip { margin: 4px 0 0; font-size: 14px; color: #33485C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.swipe { position: relative; border-radius: var(--r); overflow: hidden; }
+.swipe-bg { opacity: 0; transition: opacity .15s; position: absolute; inset: 0; background: var(--danger); color: #fff; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-right: 20px; font-weight: 700; }
+.swipe-fg { position: relative; touch-action: pan-y; transition: transform .2s; }
+.swipe.dragging .swipe-fg { transition: none; }
+.swipe.dragging .swipe-bg, .swipe.out .swipe-bg { opacity: 1; }
+.state { padding: 36px 20px; text-align: center; color: var(--muted); }
+.state .btn { margin-top: 12px; }
+
+.sheet-scrim { align-items: flex-end; }
+.sheet { width: 100%; max-height: 780px; background: var(--bg); border-radius: 24px 24px 0 0; padding: 8px 20px 24px; display: flex; flex-direction: column; gap: 10px; animation: up .25s ease-out; overflow-y: auto; }
+@keyframes up { from { transform: translateY(40px); opacity: 0; } }
+.grab { width: 40px; height: 4px; border-radius: 2px; background: #B8C8D6; margin: 4px auto; }
+.sheet h3 { margin: 0; font-size: 22px; }
+.results { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: #fff; max-height: 150px; overflow-y: auto; }
+.results:empty { display: none; }
+.results li button { width: 100%; min-height: 48px; text-align: left; padding: 0 14px; border: 0; background: none; cursor: pointer; }
+.results li button:hover { background: #EAF3FA; }
+.results .none { padding: 12px 14px; color: var(--muted); font-size: 14px; }
+.chosen { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; background: #E2F0FA; border-radius: 20px; padding: 6px 6px 6px 14px; font-weight: 700; }
+.chosen button { width: 32px; height: 32px; border-radius: 50%; border: 0; background: #fff; cursor: pointer; display: grid; place-items: center; }
+.chosen svg { width: 16px; height: 16px; }
+.switch { display: flex; align-items: center; gap: 12px; min-height: 48px; font-weight: 600; }
+.switch input { position: absolute; opacity: 0; }
+.switch .track { width: 48px; height: 28px; border-radius: 14px; background: #AAB8C5; position: relative; transition: background .2s; }
+.switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.switch input:checked + .track { background: var(--primary); }
+.switch input:checked + .track::after { transform: translateX(20px); }
+.switch input:focus-visible + .track { outline: 3px solid #7DB8E8; outline-offset: 2px; }
+.row { display: flex; gap: 10px; }
+.row .btn { flex: 1; }
+.row .btn.ghost { flex: 0 0 96px; }
+
+/* S05 */
+.detail { background: var(--paper); z-index: 10; display: flex; flex-direction: column; padding-top: 40px; }
+.d-top { display: flex; justify-content: space-between; padding: 8px 12px; min-height: 64px; }
+.d-top .icon-btn { background: rgba(0,0,0,.05); }
+.d-top #dX { margin-left: auto; } /* 삭제(X)는 항상 우상단. 뒤로 가기 화살표는 좌상단 */
+.paper { flex: 1; overflow-y: auto; margin: 0 20px; padding: 0 20px 16px; background: repeating-linear-gradient(transparent 0 31px, #EADFBF 31px 32px); line-height: 32px; font-size: 17px; border-radius: 6px; }
+.paper .from { font-weight: 700; margin: 0; }
+.paper .date { color: var(--muted); font-size: 13px; line-height: 24px; margin: 0 0 8px; }
+.paper .body { margin: 0; white-space: pre-wrap; }
+.d-bottom { padding: 16px 20px 28px; display: flex; gap: 10px; min-height: 92px; }
+.d-bottom .btn { flex: 1; }
+.shake { animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+/* 받은 편지함 카드: 답장한 편지는 맨 오른쪽에 체크 아이콘 */
+.card-row { display: flex; align-items: center; gap: 10px; }
+.card-row .grow { flex: 1; min-width: 0; }
+.replied { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; }
+.replied svg { width: 16px; height: 16px; }
+/* S06 답장 쓰기 */
+.reply { z-index: 12; }
+.r-top { justify-content: flex-start; align-items: center; gap: 8px; }
+.r-top h3 { margin: 0; font-size: 20px; }
+.r-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 0 20px; }
+.r-body textarea { flex: 1; min-height: 0; resize: none; border: 1px solid #E3D6B0; border-radius: 6px; padding: 0 14px; font-size: 17px; line-height: 32px; background: repeating-linear-gradient(transparent 0 31px, #EADFBF 31px 32px) local, var(--paper); color: var(--text); }
+.draft-note { margin: 0; font-size: 13px; color: var(--accent); font-weight: 600; }
+.dlg-scrim { z-index: 40; }
+.dialog { width: 320px; background: #fff; border-radius: 20px; padding: 22px 20px 16px; }
+.dialog h4 { margin: 0 0 8px; font-size: 19px; }
+.dialog p { margin: 0 0 16px; line-height: 1.5; color: #33485C; }
+/* 스낵바: 팝업·다이얼로그 아래, 화면 맨 아래에 띄운다 (내용을 가리지 않음) */
+.toast { position: absolute; z-index: 50; left: 16px; right: 16px; bottom: 20px; min-height: 48px; padding: 10px 16px 10px 12px; border-radius: 14px; background: #fff; color: var(--text); border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(10,30,50,.28); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; animation: snack .25s ease-out; }
+.t-ico { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 14px; line-height: 1; }
+.toast.bad .t-ico { background: var(--danger); }
+.toast.bad { border-color: #E8B9B5; }
+@keyframes snack { from { transform: translateY(16px); opacity: 0; } }
+/* 스낵바가 보이는 동안 FAB를 위로 올려 겹치지 않게 한다 */
+.fab { transition: transform .2s; }
+.has-toast .fab { transform: translateY(-68px); }
+
+/* 회원가입·로그인 보조 */
+.btn.link { background: none; color: var(--primary); min-height: 44px; font-weight: 600; }
+.signup { background: linear-gradient(var(--sea-top), var(--bg) 30%); padding: 40px 28px 28px; }
+.s-top { display: flex; align-items: center; gap: 8px; margin: 8px 0 20px -8px; }
+.s-top h2 { margin: 0; font-size: 22px; }
+.s-top .icon-btn { background: rgba(255,255,255,.7); }
+.form small { font-weight: 400; color: var(--muted); font-size: 13px; }
+.form label > .err { margin: 0; }
+
+@media (max-width: 800px) {
+  .stage { flex-direction: column; align-items: center; }
+  .phone-wrap { order: -1; }
+  .panel { width: 100%; max-width: 410px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+  </style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19l-4 1zM14 7l3 3" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" fill="none"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M7 4h10v16l-5-4-5 4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-reply" viewBox="0 0 24 24"><path d="M10 7L4 12l6 5M4 12h9a7 7 0 017 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M3 11l18-8-8 18-2-8z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M4 8l8 5 8-5M4 6h16v12H4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="i-in" viewBox="0 0 24 24"><path d="M4 13h4l2 3h4l2-3h4M4 13l2-8h12l2 8v6H4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="none"/></symbol>
+  <symbol id="bottle" viewBox="0 0 60 110">
+    <rect x="22" y="2" width="16" height="12" rx="3" fill="#B98A5A"/>
+    <path d="M24 14h12v10c10 6 16 14 16 28v40c0 8-6 14-14 14H22c-8 0-14-6-14-14V52c0-14 6-22 16-28z" fill="rgba(255,255,255,.55)" stroke="#fff" stroke-width="2.5"/>
+    <rect x="20" y="46" width="20" height="44" rx="4" fill="#FFF8E7" stroke="#D9C9A0" stroke-width="1.5" transform="rotate(-8 30 68)"/>
+    <path d="M24 56h12M24 63h12M24 70h9" stroke="#C9B787" stroke-width="2" stroke-linecap="round" transform="rotate(-8 30 68)"/>
+    <path d="M14 56v34" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+  </symbol>
+</svg>
+
+<main class="stage">
+  <aside class="panel">
+    <h1>Message Bottle 시안</h1>
+    <p class="muted">docs의 화면명세(S00~S05)를 눌러볼 수 있는 시안입니다. 색·크기는 design-system.md의 제안값입니다.</p>
+
+    <h2>화면 바로가기</h2>
+    <div class="jump">
+      <button data-jump="S00">S00 로그인</button>
+      <button data-jump="SU">회원가입</button>
+      <button data-jump="S01">S01 내 바다</button>
+      <button data-jump="S02">S02 편지 쓰기</button>
+      <button data-jump="S03">S03 보낸 편지함</button>
+      <button data-jump="S04">S04 받은 편지함</button>
+      <button data-jump="S05">S05 편지 상세(바다)</button>
+      <button data-jump="S05a">S05 상세(익명)</button>
+      <button data-jump="S06">S06 답장 쓰기</button>
+    </div>
+
+    <h2>상태 시뮬레이션</h2>
+    <label class="check"><input type="checkbox" id="optEmpty"> 빈 바다 (편지 없음)</label>
+    <label class="check"><input type="checkbox" id="optFail"> 서버 실패 (읽기·발송·보관·삭제·로그인)</label>
+
+    <h2>바다 연출 (결정 전 시안)</h2>
+    <label class="check" style="min-height:0">파도
+      <select id="waveMood" style="margin-left:8px;min-height:36px">
+        <option value="auto">자동 (굽이침과 잔잔함이 번갈아)</option>
+        <option value="calm">잔잔한 물결만</option>
+        <option value="roll">굽이치는 파도만</option>
+      </select>
+    </label>
+    <label class="check" style="min-height:0">UI 숨김 대기
+      <input type="number" id="idleSec" value="5" min="1" max="30" style="width:56px;min-height:36px;margin:0 6px 0 8px"> 초
+    </label>
+    <div class="jump">
+      <button id="idleNow">지금 숨기기</button>
+      <button id="vanishDemo">버리기 물결 미리보기</button>
+    </div>
+    <p class="muted small">① 파도가 더 크고, 파장과 높이가 자리마다·시간마다 달라서 같은 모양이 되풀이되지 않습니다. 굽이칠 때는 마루가 뾰족하고 길고 빠르며 잔잔할 때는 낮고 짧고 느립니다. ② 내 바다에서 아무것도 하지 않으면 UI가 사라지고 유리병과 파도만 남습니다(화면을 건드리면 복귀). ③ 편지를 버리기(X)했을 때만 그 자리에서 물결이 번집니다. 보관·답장 때는 유리병이 조용히 사라집니다.</p>
+
+    <h2>앱 종료</h2>
+    <button class="android-back" id="restartApp">⟳ 앱 종료 후 다시 실행</button>
+    <p class="muted small">편지를 열고 답장·보관·X 없이 종료하면 그 편지는 버려집니다. 임시 저장한 답장도 함께 사라집니다.</p>
+
+    <h2>Android 뒤로 가기</h2>
+    <button class="android-back" id="androidBack">◁ 뒤로 가기 버튼·제스처</button>
+    <p class="muted small">앱 안의 뒤로 가기와 같게 동작합니다. 바다에서 연 편지에서는 아무 일도 하지 않습니다 (Q9).</p>
+
+    <h2>정해진 것</h2>
+    <ul class="small muted">
+      <li>슬라이드 삭제: 오른쪽→왼쪽, 확인 없음</li>
+      <li>받는 사람 검색: 부분 일치, 입력이 1초간 멈추면 검색</li>
+      <li>답장: 바다에서 받은 직후에만. 돌아가기 시 임시 저장, 보내면 원본이 자동 보관되고 받은 편지함 카드 오른쪽에 ✓ 표시</li>
+      <li>열어 본 편지를 답장·보관·X 없이 더 이상 볼 수 없게 되면 버려진 것으로 처리</li>
+      <li>서버가 확인해 주기 전에 앱이 종료되어도 구제하지 않음 (확인 안내까지 기다려야 함)</li>
+      <li>임시 저장: 편지를 열어 둔 동안만 유지, 서버에는 보내지 않음. “새로 쓰기”는 이전 임시 저장을 그 자리에서 버림</li>
+      <li>답장에는 익명 선택이 없음</li>
+      <li>삭제(X)는 우상단, 뒤로 가기는 좌상단</li>
+      <li>색: 현재 색으로 확정</li>
+    </ul>
+    <h2>시안에서 임시로 한 것</h2>
+    <ul class="small muted">
+      <li>“이탈”은 앱 종료 후 다시 실행으로 시뮬레이션. 홈 버튼·전화 등 앱이 살아 있는 동안은 편지가 유지됨</li>
+      <li>색 명암비는 아직 측정하지 않음</li>
+    </ul>
+  </aside>
+
+  <section class="phone-wrap" id="phoneWrap">
+    <div class="phone">
+      <div class="screen" id="screen">
+        <div class="statusbar"><span>9:41</span><span>●●● 100%</span></div>
+
+        <!-- S00 -->
+        <section class="view login" id="vLogin">
+          <div class="login-hero">
+            <svg class="hero-bottle"><use href="#bottle"/></svg>
+            <h2>Message Bottle</h2>
+            <p>유리병에 담아 보내는 편지</p>
+          </div>
+          <form id="loginForm" class="form" novalidate>
+            <label>아이디<input id="lgUser" autocomplete="off" value="Abc123"></label>
+            <label>비밀번호<input id="lgPw" type="password" value="Pass#word12*"></label>
+            <p class="err" id="lgErr" role="alert"></p>
+            <button class="btn primary" type="submit">로그인</button>
+            <button class="btn link" type="button" id="toSignup">계정이 없나요? 회원가입</button>
+          </form>
+        </section>
+
+        <!-- 회원가입 (앱에 구현된 화면) -->
+        <section class="view signup" id="vSignup" hidden>
+          <header class="s-top">
+            <button class="icon-btn" id="suBack" aria-label="로그인으로 돌아가기"><svg><use href="#i-back"/></svg></button>
+            <h2>회원가입</h2>
+          </header>
+          <form id="signupForm" class="form" novalidate>
+            <label>아이디
+              <input id="suUser" autocomplete="off" placeholder="영문, 숫자 4~20자">
+              <small>대소문자를 구분해요. Abc와 abc는 다른 아이디입니다.</small>
+              <span class="err" id="suUserErr" role="alert"></span>
+            </label>
+            <label>비밀번호
+              <input id="suPw" type="password" placeholder="영문, 숫자, 특수기호 8~20자">
+              <small>공백은 사용할 수 없어요.</small>
+              <span class="err" id="suPwErr" role="alert"></span>
+            </label>
+            <p class="err" id="suErr" role="alert"></p>
+            <button class="btn primary" type="submit" id="suBtn">가입하기</button>
+          </form>
+        </section>
+
+        <!-- S01 -->
+        <section class="view sea" id="vSea" hidden>
+          <div class="glint"></div>
+          <div id="bottles" class="bottles"></div>
+          <div class="empty" id="seaEmpty" hidden>
+            <svg width="44" height="44"><use href="#i-out"/></svg>
+            <p>아직 도착한 유리병이 없어요</p>
+            <small>오른쪽 아래 버튼으로 먼저 편지를 보내 보세요.</small>
+          </div>
+          <canvas class="waves" id="waveCanvas" aria-hidden="true"></canvas>
+          <div class="topright">
+            <button class="chip" id="btnSent"><svg><use href="#i-send"/></svg>보낸 편지함</button>
+            <button class="chip" id="btnInbox"><svg><use href="#i-in"/></svg>받은 편지함</button>
+          </div>
+          <button class="fab" id="fab"><svg><use href="#i-pen"/></svg>편지 쓰기</button>
+        </section>
+
+        <!-- S05 -->
+        <section class="view detail" id="vDetail" hidden>
+          <header class="d-top">
+            <button class="icon-btn" id="dBack" aria-label="뒤로"><svg><use href="#i-back"/></svg></button>
+            <button class="icon-btn danger-btn" id="dX" aria-label="편지 버리기 (영구 삭제)"><svg><use href="#i-x"/></svg></button>
+          </header>
+          <article class="paper" id="paper"></article>
+          <footer class="d-bottom" id="dBottom"></footer>
+        </section>
+
+        <!-- S06 답장 쓰기 -->
+        <section class="view detail reply" id="vReply" hidden>
+          <header class="d-top r-top">
+            <button class="icon-btn" id="rBack" aria-label="돌아가기 (작성한 내용은 임시 저장)"><svg><use href="#i-back"/></svg></button>
+            <h3 id="rTitle">답장</h3>
+          </header>
+          <div class="r-body">
+            <label class="f" for="rText">답장 내용</label>
+            <textarea id="rText" placeholder="답장을 적어 보세요"></textarea>
+            <p class="err" id="rErr" role="alert"></p>
+            <p class="draft-note" id="rNote" hidden>임시 저장한 답장을 불러왔어요.</p>
+          </div>
+          <footer class="d-bottom">
+            <button class="btn primary" id="rSend"><svg><use href="#i-send"/></svg><span>답장 보내기</span></button>
+          </footer>
+        </section>
+
+        <!-- overlays -->
+        <div class="scrim" id="popupScrim" hidden>
+          <div class="popup" id="popup" role="dialog" aria-modal="true"></div>
+        </div>
+
+        <div class="scrim sheet-scrim" id="sheetScrim" hidden>
+          <div class="sheet" id="sheet" role="dialog" aria-modal="true">
+            <div class="grab"></div>
+            <h3>편지 쓰기</h3>
+            <label class="f">받는 사람 검색
+              <input id="shSearch" autocomplete="off" placeholder="아이디로 검색 (대소문자 구분)">
+            </label>
+            <div id="shChosen" class="chosen" hidden></div>
+            <ul id="shResults" class="results"></ul>
+            <p class="err" id="errTo" role="alert"></p>
+            <label class="f">편지 내용
+              <textarea id="shText" rows="5" placeholder="바다에 띄울 이야기를 적어 보세요"></textarea>
+            </label>
+            <p class="err" id="errText" role="alert"></p>
+            <label class="switch"><input type="checkbox" id="shAnon"><span class="track"></span>익명으로 보내기</label>
+            <p class="err" id="errSend" role="alert"></p>
+            <div class="row">
+              <button class="btn ghost" id="shCancel">취소</button>
+              <button class="btn primary" id="shSend"><svg><use href="#i-send"/></svg><span>보내기</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="scrim dlg-scrim" id="dlgScrim" hidden>
+          <div class="dialog" id="dlg" role="alertdialog" aria-modal="true"></div>
+        </div>
+
+        <div class="toast" id="toast" role="status" hidden><span class="t-ico" id="toastIco"></span><span id="toastMsg"></span></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+// Message Bottle 시안 — 화면 흐름 확인용 (실제 서버·DB 없음)
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const ME = 'Abc123';
+  const USERS = ['Abc123', 'abc123', 'Mina', 'minjun', 'Sea2026', 'Tester01', 'myUser', 'Hana'];
+
+  let sea = [
+    { id: 1, from: 'Mina', anon: false, date: '11월 9일', text: '안녕하세요!\n바다 건너에서 편지를 보냅니다.\n오늘 하늘이 아주 맑았어요.' },
+    { id: 2, from: null, anon: true, date: '11월 8일', text: '누군지는 말할 수 없지만, 늘 응원하고 있어요.\n좋은 하루 보내세요.' },
+    { id: 3, from: 'Tester01', anon: false, date: '11월 7일', text: '시안 확인용 편지입니다.' },
+    { id: 4, from: 'Hana', anon: false, date: '11월 6일', text: '긴 편지 예시입니다.\n' + '글이 길어지면 편지 영역 안에서 스크롤됩니다. '.repeat(14) },
+  ];
+  let inbox = [
+    { id: 11, from: 'Mina', anon: false, date: '11월 5일', text: '보관해 둔 편지 1. 첫 번째 이야기입니다.', replied: true },
+    { id: 12, from: null, anon: true, date: '11월 4일', text: '보관해 둔 익명 편지.' },
+    { id: 13, from: 'Hana', anon: false, date: '11월 3일', text: '보관해 둔 편지 3. 스크롤 확인용.' },
+    { id: 14, from: 'minjun', anon: false, date: '11월 2일', text: '보관해 둔 편지 4.', replied: true },
+    { id: 15, from: 'Sea2026', anon: false, date: '11월 1일', text: '보관해 둔 편지 5.' },
+    { id: 16, from: 'myUser', anon: false, date: '10월 30일', text: '보관해 둔 편지 6.' },
+    { id: 17, from: null, anon: true, date: '10월 28일', text: '보관해 둔 익명 편지 2.' },
+  ];
+  let sent = [
+    { id: 21, to: 'Mina', anon: false, date: '11월 9일', text: '지난번 편지 잘 받았어요. 고마워요!' },
+    { id: 22, to: 'Hana', anon: true, date: '11월 6일', text: '익명으로 보낸 편지입니다.' },
+    { id: 23, to: 'Tester01', anon: false, date: '11월 2일', text: '테스트용으로 보낸 편지.' },
+  ];
+  let nextId = 100;
+
+  const state = { loggedIn: false, popup: null, detail: null, sheet: false, dialog: null, chosen: null, busy: false, reply: null };
+  const drafts = {}; // 임시 저장한 답장: 원본 편지 id → 내용 (편지를 열어 둔 동안만 유지)
+  const opened = new Set(); // 열어 본 바다 편지 id. 답장·보관·버리기 없이 앱을 종료하면 버려진다
+  const SEARCH_DELAY = 1000; // 입력이 멈춘 뒤 이 시간(ms) 동안 변화가 없으면 검색
+  // 유리병 자리 10곳: 서로 겹치지 않고 우상단 버튼·FAB과도 겹치지 않는 좌표
+  const SLOTS = [[60, 200], [250, 260], [130, 380], [250, 490], [30, 430], [170, 560], [300, 370], [40, 310], [150, 180], [310, 610]];
+
+  const opt = { empty: () => $('optEmpty').checked, fail: () => $('optFail').checked };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function server(ms = 600) {
+    await wait(ms);
+    if (opt.fail()) throw new Error('fail');
+  }
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const icon = (n) => `<svg><use href="#i-${n}"/></svg>`;
+
+  let toastTimer;
+  function toast(msg, bad) {
+    const t = $('toast');
+    $('toastMsg').textContent = msg;
+    $('toastIco').textContent = bad ? '!' : '✓';
+    t.className = 'toast' + (bad ? ' bad' : '');
+    t.hidden = false;
+    t.style.animation = 'none'; void t.offsetWidth; t.style.animation = '';
+    $('screen').classList.add('has-toast');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; $('screen').classList.remove('has-toast'); }, 2800);
+  }
+
+  /* ---------- views ---------- */
+  function setView(name) {
+    state.view = name;
+    $('vLogin').hidden = name !== 'login';
+    $('vSignup').hidden = name !== 'signup';
+    $('vSea').hidden = name !== 'sea';
+  }
+  // 유리병은 자기 자리를 유지한다. 하나가 사라져도 나머지는 움직이지 않고, 빈자리에 새 유리병이 들어온다.
+  function assignSlots() {
+    const used = new Set(sea.filter((l) => l.slot !== undefined).map((l) => l.slot));
+    sea.forEach((l) => {
+      if (l.slot !== undefined) return;
+      for (let s = 0; s < SLOTS.length; s++) {
+        if (!used.has(s)) { l.slot = s; used.add(s); break; }
+      }
+    });
+  }
+  const slotOf = (id) => (sea.find((x) => x.id === id) || {}).slot;
+  function renderSea() {
+    assignSlots();
+    const list = opt.empty() ? [] : sea.filter((l) => l.slot !== undefined);
+    $('seaEmpty').hidden = list.length > 0;
+    $('bottles').innerHTML = '';
+    list.forEach((l) => {
+      const i = l.slot;
+      const b = document.createElement('button');
+      b.className = 'bottle';
+      b.style.left = SLOTS[i][0] + 'px';
+      b.style.top = SLOTS[i][1] + 'px';
+      b.style.setProperty('--rot', ((i % 5) - 2) * 4 + 'deg');
+      b.style.animationDelay = -i * 0.7 + 's';
+      b.setAttribute('aria-label', '유리병 편지 열기');
+      b.innerHTML = '<svg viewBox="0 0 60 110"><use href="#bottle"/></svg>';
+      b.addEventListener('click', () => openDetail(l, 'sea'));
+      $('bottles').appendChild(b);
+    });
+  }
+
+  /* ---------- login (S00) ---------- */
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = $('lgErr');
+    err.textContent = '';
+    if (!$('lgUser').value || !$('lgPw').value) { err.textContent = '아이디와 비밀번호를 입력해주세요.'; return; }
+    try { await server(500); } catch { err.textContent = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.'; return; }
+    state.loggedIn = true;
+    setView('sea');
+    renderSea();
+  });
+
+  /* ---------- signup ---------- */
+  const TAKEN = ['Abc123', 'abc123', 'Mina', 'Hana']; // 이미 있는 아이디 (대소문자 구분)
+  function validUser(v) {
+    if (!v) return '아이디를 입력해주세요.';
+    return /^[A-Za-z0-9]{4,20}$/.test(v) ? '' : '아이디는 영문, 숫자만 사용하여 4~20자로 입력해주세요.';
+  }
+  function validPw(v) {
+    if (!v) return '비밀번호를 입력해주세요.';
+    return /^[\x21-\x7E]{8,20}$/.test(v) ? '' : '비밀번호는 영문, 숫자, 특수기호만 사용하여 8~20자로 입력해주세요.';
+  }
+  $('toSignup').onclick = () => { $('signupForm').reset(); ['suUserErr', 'suPwErr', 'suErr'].forEach((i) => ($(i).textContent = '')); setView('signup'); };
+  $('suBack').onclick = () => setView('login');
+  $('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const u = $('suUser').value, p = $('suPw').value;
+    $('suUserErr').textContent = validUser(u);
+    $('suPwErr').textContent = validPw(p);
+    $('suErr').textContent = '';
+    if ($('suUserErr').textContent || $('suPwErr').textContent) return;
+    const btn = $('suBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span><span>가입하는 중…</span>';
+    $('suUser').disabled = $('suPw').disabled = true;
+    let failed = false;
+    try { await server(800); } catch { failed = true; }
+    btn.disabled = false;
+    btn.textContent = '가입하기';
+    $('suUser').disabled = $('suPw').disabled = false;
+    if (failed) { $('suErr').textContent = '서버에 연결할 수 없습니다. 입력한 내용은 그대로 있어요. 다시 시도해주세요.'; return; }
+    if (TAKEN.includes(u)) { $('suUserErr').textContent = '이미 사용 중인 아이디입니다.'; return; } // 409
+    $('lgUser').value = u; $('lgPw').value = '';
+    setView('login');
+    toast('가입이 완료되었습니다. 로그인해주세요.');
+  });
+
+  /* ---------- popups (S03 / S04) ---------- */
+  async function openPopup(kind) {
+    state.popup = kind;
+    $('popupScrim').hidden = false;
+    const p = $('popup');
+    const title = kind === 'sent' ? '보낸 편지함' : '받은 편지함';
+    const hint = kind === 'sent' ? '보낸 편지는 삭제할 수 없어요.' : '카드를 왼쪽으로 밀면 삭제됩니다. (확인 없음) ✓는 답장한 편지예요.';
+    p.innerHTML = `<div class="pop-head"><h3>${title}</h3><button class="pop-close" id="popClose">닫기</button></div>
+      <p class="pop-hint">${hint}</p><div class="state">불러오는 중…</div>`;
+    $('popClose').onclick = closePopup;
+    try { await server(450); } catch {
+      if (state.popup !== kind) return;
+      p.querySelector('.state').innerHTML = `불러오지 못했습니다.<br><button class="btn primary" id="popRetry">다시 시도</button>`;
+      $('popRetry').onclick = () => openPopup(kind);
+      return;
+    }
+    if (state.popup !== kind) return;
+    const items = kind === 'sent' ? sent : inbox;
+    p.querySelector('.state').remove();
+    const ul = document.createElement('ul');
+    ul.className = 'list';
+    p.appendChild(ul);
+    if (!items.length) {
+      ul.innerHTML = `<li class="state">${kind === 'sent' ? '보낸 편지가 없습니다' : '보관한 편지가 없습니다'}</li>`;
+      return;
+    }
+    items.forEach((l) => ul.appendChild(kind === 'sent' ? sentCard(l) : inboxCard(l)));
+  }
+  function who(l, kind) {
+    if (kind === 'sent') return `${esc(l.to)}${l.anon ? '<span class="meta">익명으로 보냄</span>' : ''}`;
+    return l.anon ? '익명' : esc(l.from);
+  }
+  function cardHtml(l, kind) {
+    return `<b>${who(l, kind)}</b><span class="meta">${l.date}</span><p class="snip">${esc(l.text.split('\n')[0])}</p>`;
+  }
+  function sentCard(l) {
+    const li = document.createElement('li');
+    li.innerHTML = `<button class="card">${cardHtml(l, 'sent')}</button>`;
+    li.firstChild.onclick = () => openDetail(l, 'sent');
+    return li;
+  }
+  function inboxCard(l) {
+    const li = document.createElement('li');
+    li.className = 'swipe';
+    li.innerHTML = `<div class="swipe-bg">${icon('trash')}삭제</div>
+      <div class="swipe-fg"><div class="card" tabindex="0" role="button"><div class="card-row"><div class="grow">${cardHtml(l, 'inbox')}</div>${l.replied ? `<span class="replied" role="img" aria-label="답장한 편지">${icon('check')}</span>` : ''}</div></div></div>`;
+    const fg = li.querySelector('.swipe-fg');
+    let x0 = null, dx = 0;
+    fg.addEventListener('pointerdown', (e) => { x0 = e.clientX; dx = 0; li.classList.add('dragging'); fg.setPointerCapture(e.pointerId); });
+    fg.addEventListener('pointermove', (e) => {
+      if (x0 === null) return;
+      dx = Math.min(0, e.clientX - x0);
+      fg.style.transform = `translateX(${dx}px)`;
+    });
+    const end = () => {
+      if (x0 === null) return;
+      x0 = null;
+      li.classList.remove('dragging');
+      if (dx < -100) removeInbox(l, li, fg);
+      else {
+        fg.style.transform = '';
+        if (Math.abs(dx) < 6) openDetail(l, 'inbox');
+      }
+    };
+    fg.addEventListener('pointerup', end);
+    fg.addEventListener('pointercancel', () => { x0 = null; fg.style.transform = ''; li.classList.remove('dragging'); });
+    fg.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') openDetail(l, 'inbox');
+      if (e.key === 'Delete') removeInbox(l, li, fg);
+    });
+    return li;
+  }
+  async function removeInbox(l, li, fg) {
+    fg.style.transform = 'translateX(-100%)';
+    li.classList.add('out');
+    try { await server(500); } catch {
+      fg.style.transform = '';
+      li.classList.remove('out');
+      toast('삭제하지 못했습니다. 카드를 다시 밀어 보세요.', true);
+      return;
+    }
+    inbox = inbox.filter((x) => x.id !== l.id);
+    li.remove();
+    toast('삭제했어요.');
+    const ul = $('popup').querySelector('.list');
+    if (ul && !ul.children.length) ul.innerHTML = '<li class="state">보관한 편지가 없습니다</li>';
+  }
+  function closePopup() {
+    state.popup = null;
+    $('popupScrim').hidden = true;
+  }
+  $('popupScrim').addEventListener('click', (e) => { if (e.target === $('popupScrim')) closePopup(); }); // Q6: 바깥 터치로 닫기 가능
+  $('btnSent').onclick = () => openPopup('sent');
+  $('btnInbox').onclick = () => openPopup('inbox');
+
+  /* ---------- detail (S05) ---------- */
+  function openDetail(letter, mode) {
+    const origin = state.popup;
+    if (mode !== 'sea') closePopup();
+    state.detail = { letter, mode, origin };
+    const sea_ = mode === 'sea';
+    if (sea_) opened.add(letter.id);
+    $('dBack').hidden = sea_;
+    $('dX').hidden = !sea_;
+    const head = mode === 'sent'
+      ? `${esc(letter.to)} 님에게 보낸 편지${letter.anon ? ' (익명)' : ''}`
+      : letter.anon ? '익명의 유리병' : `${esc(letter.from)} 님의 편지`;
+    $('paper').innerHTML = `<p class="from">${head}</p><p class="date">${letter.date}</p><p class="body">${esc(letter.text)}</p>`;
+    // 바다에서 받은 직후에만 답장할 수 있다. 익명 편지는 [보관]만.
+    const replyBtn = sea_ && !letter.anon ? `<button class="btn primary" id="dReply">${icon('reply')}<span>답장</span></button>` : '';
+    $('dBottom').innerHTML = sea_ ? `${replyBtn}<button class="btn accent" id="dArchive">${icon('bookmark')}<span>보관</span></button>` : '';
+    if (sea_) $('dArchive').onclick = archive;
+    if (replyBtn) $('dReply').onclick = () => startReply(letter);
+    $('vDetail').hidden = false;
+  }
+
+  /* ---------- reply (S06) ---------- */
+  function startReply(letter) {
+    if (drafts[letter.id] === undefined) { openReply(letter, false); return; }
+    showDialog({
+      title: '임시 저장한 답장이 있어요',
+      text: '불러올까요? 취소를 누르면 새로 씁니다.',
+      cancel: '취소',
+      ok: '확인',
+      onCancel: () => { delete drafts[letter.id]; openReply(letter, false); }, // 새로 쓰기
+      onOk: async () => openReply(letter, true), // 불러오기
+    });
+  }
+  function openReply(letter, load) {
+    state.reply = { letter };
+    $('rTitle').textContent = `${letter.from} 님에게 답장`;
+    $('rText').value = load ? drafts[letter.id] : '';
+    $('rNote').hidden = !load;
+    $('rErr').textContent = '';
+    setReplyBusy(false);
+    $('vReply').hidden = false;
+  }
+  function setReplyBusy(b) {
+    state.replyBusy = b;
+    $('rText').disabled = $('rBack').disabled = $('rSend').disabled = b;
+    $('rSend').innerHTML = b ? '<span class="spin"></span><span>보내는 중…</span>' : `${icon('send')}<span>답장 보내기</span>`;
+  }
+  function leaveReply() {
+    if (!state.reply || state.replyBusy) return;
+    const id = state.reply.letter.id, text = $('rText').value;
+    if (text.trim()) { drafts[id] = text; toast('작성한 답장을 임시 저장했어요.'); } else delete drafts[id];
+    state.reply = null;
+    $('vReply').hidden = true; // 원본 편지(S05)로 돌아가 내용을 다시 볼 수 있다
+  }
+  $('rBack').onclick = leaveReply;
+  $('rSend').onclick = async () => {
+    const text = $('rText').value, letter = state.reply.letter;
+    $('rErr').textContent = '';
+    if (!text.trim()) { $('rErr').textContent = '답장 내용을 입력해주세요.'; return; }
+    setReplyBusy(true);
+    try { await server(900); } catch {
+      setReplyBusy(false);
+      $('rErr').textContent = '보내지 못했습니다. 입력한 내용은 그대로 있어요. 다시 시도해주세요.';
+      return;
+    }
+    // 답장은 새 편지로 상대에게 가고, 원본은 자동으로 받은 편지함에 보관된다 (✓ 표시)
+    sea = sea.filter((x) => x.id !== letter.id);
+    inbox.unshift({ ...letter, date: '방금', replied: true });
+    sent.unshift({ id: nextId++, to: letter.from, anon: false, date: '방금', text });
+    delete drafts[letter.id];
+    state.reply = null;
+    $('vReply').hidden = true;
+    closeDetail(false);
+    renderSea();
+    toast('답장을 보냈어요. 원래 편지는 받은 편지함에 보관했어요.');
+  };
+  function closeDetail(backToPopup) {
+    const d = state.detail;
+    state.detail = null;
+    $('vDetail').hidden = true;
+    if (backToPopup && d && d.origin) openPopup(d.origin);
+  }
+  async function archive() {
+    const d = state.detail;
+    const btn = $('dArchive');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span><span>보관하는 중…</span>';
+    try { await server(700); } catch {
+      btn.disabled = false;
+      btn.innerHTML = `${icon('bookmark')}<span>보관</span>`;
+      toast('보관하지 못했습니다. 편지는 그대로 있어요. 다시 시도해주세요.', true);
+      return;
+    }
+    sea = sea.filter((x) => x.id !== d.letter.id);
+    delete drafts[d.letter.id]; // 보관하면 임시 저장한 답장도 지운다
+    inbox.unshift({ ...d.letter, date: '방금' });
+    closeDetail(false);
+    renderSea();
+    toast('받은 편지함에 보관했어요.');
+  }
+  $('dBack').onclick = () => closeDetail(true);
+  $('dX').onclick = () => {
+    showDialog({
+      title: '이 편지를 버릴까요?',
+      text: '영구히 삭제되며 받은 편지함에 저장되지 않습니다. 되돌릴 수 없어요.',
+      cancel: '취소',
+      ok: '버리기',
+      okIcon: 'trash',
+      okClass: 'danger',
+      onOk: async () => {
+        const d = state.detail;
+        try { await server(600); } catch { toast('삭제하지 못했습니다. 편지는 그대로 있어요.', true); return; }
+        const vSlot = slotOf(d.letter.id);
+        sea = sea.filter((x) => x.id !== d.letter.id);
+        delete drafts[d.letter.id]; // 버리면 임시 저장한 답장도 지운다
+        closeDetail(false);
+        renderSea();
+        vanishAt(vSlot);
+        toast('편지를 버렸어요.');
+      },
+    });
+  };
+
+  /* ---------- dialog ---------- */
+  function showDialog(o) {
+    state.dialog = o;
+    $('dlg').innerHTML = `<h4>${o.title}</h4><p>${o.text}</p>
+      <div class="row"><button class="btn ghost" id="dlgCancel">${o.cancel}</button>
+      <button class="btn ${o.okClass || 'primary'}" id="dlgOk">${o.okIcon ? icon(o.okIcon) : ''}<span>${o.ok}</span></button></div>`;
+    $('dlgCancel').onclick = () => { closeDialog(); if (o.onCancel) o.onCancel(); };
+    $('dlgOk').onclick = async () => {
+      const btn = $('dlgOk');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span>';
+      await o.onOk();
+      closeDialog();
+    };
+    $('dlgScrim').hidden = false; // 바깥 터치로는 닫히지 않음
+    $('dlgCancel').focus();
+  }
+  function closeDialog() {
+    state.dialog = null;
+    $('dlgScrim').hidden = true;
+  }
+
+  /* ---------- sheet (S02) ---------- */
+  function openSheet() {
+    state.sheet = true;
+    state.chosen = null;
+    $('shSearch').value = '';
+    $('shText').value = '';
+    $('shAnon').checked = false; // Q3: 기본 익명 아님
+    ['errTo', 'errText', 'errSend'].forEach((id) => ($(id).textContent = ''));
+    $('shResults').innerHTML = '';
+    $('shChosen').hidden = true;
+    $('shSearch').closest('label').hidden = false;
+    setSheetBusy(false);
+    $('sheetScrim').hidden = false;
+  }
+  function setSheetBusy(b) {
+    state.busy = b;
+    ['shSearch', 'shText', 'shAnon', 'shCancel', 'shSend'].forEach((id) => ($(id).disabled = b));
+    $('shSend').innerHTML = b ? '<span class="spin"></span><span>보내는 중…</span>' : `${icon('send')}<span>보내기</span>`;
+  }
+  function sheetDirty() {
+    return !!(state.chosen || $('shText').value.trim() || $('shSearch').value.trim());
+  }
+  function cancelSheet() {
+    if (state.busy) return;
+    if (!sheetDirty()) { closeSheet(); return; }
+    showDialog({
+      title: '작성 중인 편지를 버릴까요?',
+      text: '지금까지 쓴 내용이 지워집니다.',
+      cancel: '계속 작성',
+      ok: '버리기',
+      okClass: 'danger',
+      onOk: async () => closeSheet(),
+    });
+  }
+  function closeSheet() {
+    clearTimeout(searchTimer);
+    state.sheet = false;
+    $('sheetScrim').hidden = true;
+  }
+  // 받는 사람 검색: 글자를 칠 때마다 부르지 않고, 입력이 SEARCH_DELAY 동안 멈추면 한 번만 검색한다. 대소문자 구분, 부분 일치.
+  let searchTimer;
+  async function runSearch(q) {
+    const ul = $('shResults');
+    ul.innerHTML = '<li class="none">검색 중…</li>';
+    try { await server(400); } catch {
+      if ($('shSearch').value !== q) return;
+      ul.innerHTML = '<li><button data-retry="1">검색하지 못했습니다. 다시 시도</button></li>';
+      return;
+    }
+    if ($('shSearch').value !== q) return; // 그 사이 입력이 바뀌었으면 결과를 버린다
+    const hits = USERS.filter((u) => u.includes(q));
+    ul.innerHTML = hits.length
+      ? hits.map((u) => `<li><button data-u="${u}">${u}</button></li>`).join('')
+      : '<li class="none">일치하는 사용자가 없습니다.</li>';
+  }
+  $('shSearch').addEventListener('input', () => {
+    const q = $('shSearch').value;
+    clearTimeout(searchTimer);
+    $('errTo').textContent = '';
+    if (!q) { $('shResults').innerHTML = ''; return; }
+    $('shResults').innerHTML = '<li class="none">입력을 멈추면 검색해요…</li>';
+    searchTimer = setTimeout(() => runSearch(q), SEARCH_DELAY);
+  });
+  $('shResults').addEventListener('click', (e) => {
+    if (e.target.closest('button[data-retry]')) { runSearch($('shSearch').value); return; }
+    const b = e.target.closest('button[data-u]');
+    if (!b) return;
+    const u = b.dataset.u;
+    if (u === ME) { $('errTo').textContent = '나 자신에게는 보낼 수 없습니다.'; return; } // Q2
+    state.chosen = u;
+    $('errTo').textContent = '';
+    $('shResults').innerHTML = '';
+    $('shSearch').value = '';
+    $('shSearch').closest('label').hidden = true;
+    $('shChosen').hidden = false;
+    $('shChosen').innerHTML = `${esc(u)} 님에게<button aria-label="받는 사람 다시 고르기">${icon('x')}</button>`;
+    $('shChosen').querySelector('button').onclick = () => {
+      state.chosen = null;
+      $('shChosen').hidden = true;
+      $('shSearch').closest('label').hidden = false;
+      $('shSearch').focus();
+    };
+  });
+  $('shSend').onclick = async () => {
+    $('errTo').textContent = '';
+    $('errText').textContent = '';
+    $('errSend').textContent = '';
+    let bad = false;
+    if (!state.chosen) { $('errTo').textContent = '받는 사람을 선택해주세요.'; bad = true; }
+    if (!$('shText').value.trim()) { $('errText').textContent = '편지 내용을 입력해주세요.'; bad = true; } // Q1: 길이 제한 없음
+    if (bad) return;
+    setSheetBusy(true);
+    try { await server(900); } catch {
+      setSheetBusy(false);
+      $('errSend').textContent = '보내지 못했습니다. 입력한 내용은 그대로 있어요. 다시 시도해주세요.';
+      return;
+    }
+    sent.unshift({ id: nextId++, to: state.chosen, anon: $('shAnon').checked, date: '방금', text: $('shText').value });
+    closeSheet();
+    toast('보냈습니다. 보낸 편지함에서 확인할 수 있어요.');
+  };
+  $('shCancel').onclick = cancelSheet;
+  $('sheetScrim').addEventListener('click', (e) => { if (e.target === $('sheetScrim')) cancelSheet(); });
+  $('fab').onclick = openSheet;
+
+  /* ---------- Android back (Q9) ---------- */
+  function androidBack() {
+    if (state.dialog) { closeDialog(); return; }
+    if (state.reply) { leaveReply(); return; } // 답장 화면의 돌아가기 버튼과 같다 (임시 저장)
+    if (state.detail) {
+      if (state.detail.mode === 'sea') {
+        // 앱 안에 뒤로 가기 버튼이 없으므로 아무 일도 하지 않음 (닫지도 삭제하지도 않음)
+        const p = $('paper');
+        p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake');
+        return;
+      }
+      closeDetail(true);
+      return;
+    }
+    if (state.sheet) { cancelSheet(); return; }
+    if (state.popup) { closePopup(); return; }
+    if (state.view === 'signup') { setView('login'); return; }
+    toast('(앱 종료 동작 — 시안에서는 아무 일도 하지 않아요)');
+  }
+  $('androidBack').onclick = androidBack;
+
+  /* ---------- jump / options ---------- */
+  function reset() {
+    closeDialog(); closePopup(); closeSheet(); state.detail = null; $('vDetail').hidden = true;
+    state.reply = null; state.replyBusy = false; $('vReply').hidden = true;
+  }
+  document.querySelectorAll('[data-jump]').forEach((b) => {
+    b.onclick = () => {
+      wake();
+      reset();
+      const k = b.dataset.jump;
+      if (k === 'S00') { state.loggedIn = false; setView('login'); return; }
+      if (k === 'SU') { state.loggedIn = false; $('toSignup').click(); return; }
+      state.loggedIn = true; setView('sea'); renderSea();
+      if (k === 'S02') openSheet();
+      if (k === 'S03') openPopup('sent');
+      if (k === 'S04') openPopup('inbox');
+      if (k === 'S05') openDetail(sea.find((x) => !x.anon) || sea[0], 'sea');
+      if (k === 'S05a') openDetail(sea.find((x) => x.anon) || sea[0], 'sea');
+      if (k === 'S06') { const l = sea.find((x) => !x.anon); if (l) { openDetail(l, 'sea'); openReply(l, false); } }
+    };
+  });
+  $('optEmpty').onchange = renderSea;
+  // 앱 종료 후 다시 실행: 열어만 보고 답장·보관·버리기를 하지 않은 편지는 버려지고, 임시 저장도 사라진다
+  $('restartApp').onclick = () => {
+    reset();
+    const lost = sea.filter((l) => opened.has(l.id));
+    sea = sea.filter((l) => !opened.has(l.id));
+    opened.clear();
+    Object.keys(drafts).forEach((k) => delete drafts[k]);
+    state.loggedIn = true; setView('sea'); renderSea();
+    toast(lost.length ? `앱을 다시 실행했어요. 열어만 보고 닫은 편지 ${lost.length}통은 버려졌어요.` : '앱을 다시 실행했어요.');
+  };
+
+  /* ---------- 파도: 왼쪽에서 오른쪽으로만 흐르는 진행 파도 ----------
+     수면의 점마다 파도가 지나가는 모양(Gerstner 파)으로 계산한다. 높이만 흔드는 것이 아니라 선 모양 자체가
+     오른쪽으로 이동하며, 가로 이동량의 합을 1 미만으로 묶어 선이 꺾이거나 겹치지 않는다.
+     잔잔: 낮고 부드러운 물결, 거센: 높고 긴 파도에 뾰족한 마루. 둘 다: 두 상태를 천천히 오간다. */
+  const waves = (() => {
+    const cv = $('waveCanvas'), ctx = cv.getContext('2d');
+    const W = 390, H = 230, dpr = window.devicePixelRatio || 1;
+    cv.width = W * dpr; cv.height = H * dpr; ctx.scale(dpr, dpr);
+    const layers = [
+      { color: 'rgba(96,170,215,.42)', base: 168, amp: .70, speed: .80, off: 0.0 },
+      { color: 'rgba(52,134,190,.52)', base: 138, amp: .85, speed: .95, off: 2.1 },
+      { color: 'rgba(27,100,155,.62)', base: 104, amp: 1.00, speed: 1.10, off: 4.3 },
+      { color: 'rgba(20,82,130,.80)', base: 70, amp: 1.15, speed: 1.25, off: 1.2 },
+    ];
+    const WL = [380, 210, 120], SP = [70, 50, 36], CALM = [3.0, 4.0, 3.2], ROUGH = [20, 10, 4];
+    const K = WL.map((w) => 2 * Math.PI / w);
+    layers.forEach((l) => { l.ph = [0, 0, 0]; });
+    const lerp = (a, b, t) => a + (b - a) * t;
+    let forced = 'auto', mood = 0, modeTime = 0;
+    const target = () => {
+      if (forced === 'calm') return 0;
+      if (forced === 'roll') return 1;
+      const s = .5 - .5 * Math.cos(.2 * modeTime);
+      const v = Math.min(1, Math.max(0, (s - .2) / .6));
+      return v * v * (3 - 2 * v);
+    };
+    function points(l) {
+      const a = WL.map((_, i) => lerp(CALM[i], ROUGH[i], mood) * l.amp);
+      const sumAk = a.reduce((s, v, i) => s + v * K[i], 0);
+      const q = lerp(.12, .8, mood) / sumAk;
+      const pts = [];
+      for (let u = -60; u <= W + 64; u += 4) {
+        let dx = 0, dy = 0;
+        for (let i = 0; i < 3; i++) {
+          const th = K[i] * u - l.ph[i] - l.off;
+          dx -= q * a[i] * Math.sin(th);
+          dy += a[i] * Math.cos(th);
+        }
+        pts.push([u + dx, H - l.base - dy]);
+      }
+      return pts;
+    }
+    function draw(dt) {
+      modeTime += dt;
+      mood += (target() - mood) * (1 - Math.exp(-dt * 1.5));
+      ctx.clearRect(0, 0, W, H);
+      layers.forEach((l, li) => {
+        for (let i = 0; i < 3; i++) l.ph[i] += K[i] * SP[i] * l.speed * (1 + 1.1 * mood) * dt;
+        const pts = points(l);
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], H);
+        pts.forEach((p) => ctx.lineTo(p[0], p[1]));
+        ctx.lineTo(pts[pts.length - 1][0], H);
+        ctx.closePath();
+        ctx.fillStyle = l.color;
+        ctx.fill();
+        if (li >= 2 && mood > .45) { // 거셀 때는 마루에 흰 거품 선
+          ctx.beginPath();
+          pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+          ctx.strokeStyle = `rgba(255,255,255,${Math.min(1, (mood - .45) / .55) * .5})`;
+          ctx.lineWidth = 1.6;
+          ctx.stroke();
+        }
+      });
+      $('bottles').style.setProperty('--bob', (6 + 9 * mood).toFixed(1) + 'px');
+    }
+    let last = performance.now();
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function frame(now) {
+      const dt = Math.min(.05, (now - last) / 1000);
+      last = now;
+      if (!$('vSea').hidden) draw(dt);
+      requestAnimationFrame(frame);
+    }
+    if (reduce) draw(0); else requestAnimationFrame(frame);
+    return { setMode: (v) => { forced = v; }, step: (dt) => draw(dt), get mood() { return mood; } };
+  })();
+  $('waveMood').onchange = () => waves.setMode($('waveMood').value);
+
+  /* ---------- 아무것도 하지 않으면 UI를 숨긴다 ---------- */
+  let lastTouch = Date.now();
+  const idleMs = () => Math.max(1, +$('idleSec').value || 5) * 1000;
+  function wake() {
+    lastTouch = Date.now();
+    $('vSea').classList.remove('idle');
+  }
+  $('screen').addEventListener('pointerdown', wake, true);
+  $('screen').addEventListener('pointermove', wake, true);
+  $('screen').addEventListener('wheel', wake, true);
+  document.addEventListener('keydown', wake, true);
+  // 내 바다가 맨 위 화면일 때만 센다. 팝업·편지·시트·확인창이 열려 있으면 센 시간을 처음부터 다시 센다.
+  const canIdle = () => state.loggedIn && state.view === 'sea' && !state.popup && !state.detail && !state.sheet && !state.dialog && !state.reply;
+  setInterval(() => {
+    const seaEl = $('vSea');
+    if (!canIdle()) { lastTouch = Date.now(); seaEl.classList.remove('idle'); return; }
+    if (Date.now() - lastTouch >= idleMs()) seaEl.classList.add('idle');
+  }, 300);
+  $('idleNow').onclick = () => {
+    if (!canIdle()) document.querySelector('[data-jump=S01]').click();
+    lastTouch = Date.now() - 1e9;
+    $('vSea').classList.add('idle');
+  };
+
+  /* ---------- 유리병이 사라질 때 번지는 물결 ---------- */
+  function vanishAt(slot) {
+    if (slot === undefined || $('vSea').hidden) return;
+    const g = document.createElement('div');
+    g.className = 'vanish';
+    g.style.left = SLOTS[slot][0] + 28 + 'px';  // 유리병(56x100)의 가운데
+    g.style.top = SLOTS[slot][1] + 62 + 'px';   // 물에 잠긴 아래쪽
+    g.innerHTML = '<div class="flat"><span class="ring"></span><span class="ring r2"></span><span class="ring r3"></span></div>'
+      + '<svg class="ghost" viewBox="0 0 60 110"><use href="#bottle"/></svg>';
+    $('vSea').appendChild(g);
+    setTimeout(() => g.remove(), 2800);
+  }
+  $('vanishDemo').onclick = () => {
+    if ($('vSea').hidden) document.querySelector('[data-jump=S01]').click();
+    const slots = sea.filter((l) => l.slot !== undefined).map((l) => l.slot);
+    vanishAt(slots.length ? slots[Math.floor(Math.random() * slots.length)] : 4);
+    wake();
+  };
+
+  /* ---------- fit to window ---------- */
+  function fit() {
+    // 폰(410x864)을 창 크기에 맞춰 줄인다. 래퍼 크기를 같이 줄여서 가로 스크롤이 생기지 않게 한다.
+    const w = $('phoneWrap');
+    const s = Math.min(1, (window.innerHeight - 24) / 864, (window.innerWidth - 32) / 410);
+    const k = s > 0.3 ? s : 0.3;
+    w.style.width = `${410 * k}px`;
+    w.style.height = `${864 * k}px`;
+    w.firstElementChild.style.transform = k < 1 ? `scale(${k})` : '';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+  setView('login');
+})();
+</script>
+</body>
+</html>

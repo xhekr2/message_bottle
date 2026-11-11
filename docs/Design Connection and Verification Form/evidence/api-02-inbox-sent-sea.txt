@@ -1,0 +1,10 @@
+# 2026-11-11 14:07:57 ichk01 token
+> GET /api/inbox
+[{"archiveId":8,"letterId":22,"senderUsername":"ichk02","anonymous":false,"preview":"integration check letter one","sentAt":"2026-11-11T13:57:21.131865","archivedAt":"2026-11-11T14:00:10.512085","replied":false}]
+< HTTP 200
+> GET /api/sent
+[{"id":26,"receiverUsername":"ichk02","anonymous":false,"preview":"app write check 1111","sentAt":"2026-11-11T14:07:19.171288"}]
+< HTTP 200
+> GET /api/sea/me
+{"floatingCount":3,"capacity":10,"visibility":"PRIVATE","letters":[{"id":23,"sentAt":"2026-11-11T13:57:21.240939"},{"id":24,"sentAt":"2026-11-11T13:57:21.340065"},{"id":25,"sentAt":"2026-11-11T13:57:21.445511"}]}
+< HTTP 200

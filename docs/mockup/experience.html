@@ -1,0 +1,481 @@
+<title>아침·밤바다 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root {
+  --c-bg: #E9EEF3; --c-surface: #FFFFFF; --c-text: #12263A; --c-muted: #5A6B7B;
+  --c-line: #D6E3EE; --c-chip: #F4F8FB; --c-on: #0B5FA5; --c-on-text: #FFFFFF; --c-warn: #8A5A00; --c-warn-bg: #FFF4D6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-bg: #0E1822; --c-surface: #16232F; --c-text: #E6EEF5; --c-muted: #9FB1C1;
+    --c-line: #2B3C4A; --c-chip: #1E2E3B; --c-on: #5AA9E6; --c-on-text: #0E1822; --c-warn: #FFD98A; --c-warn-bg: #3A2E12;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --c-bg: #0E1822; --c-surface: #16232F; --c-text: #E6EEF5; --c-muted: #9FB1C1;
+  --c-line: #2B3C4A; --c-chip: #1E2E3B; --c-on: #5AA9E6; --c-on-text: #0E1822; --c-warn: #FFD98A; --c-warn-bg: #3A2E12;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--c-bg); color: var(--c-text);
+  font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  font-size: 15px; line-height: 1.55;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 940px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; text-wrap: balance; }
+.lede { margin: 0 0 24px; color: var(--c-muted); max-width: 62ch; }
+.stage { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.phone-slot { width: min(428px, 100%); flex: 0 0 auto; }
+.side { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.box { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: 14px; padding: 16px; }
+.box h2 { font-size: 13px; margin: 0 0 10px; color: var(--c-muted); font-weight: 600; letter-spacing: .02em; }
+.box p.hint { margin: 10px 0 0; font-size: 13px; color: var(--c-muted); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button, .act {
+  font: inherit; font-size: 14px; min-height: 40px; padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--c-line); background: var(--c-chip); color: var(--c-text); cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--c-on); border-color: var(--c-on); color: var(--c-on-text); font-weight: 700; }
+.act { margin-top: 10px; font-weight: 600; }
+button:focus-visible, input:focus-visible { outline: 3px solid #7DB8E8; outline-offset: 2px; }
+.notes { margin: 0; padding-left: 18px; font-size: 14px; }
+.notes li + li { margin-top: 6px; }
+.notes small { color: var(--c-muted); font-size: 13px; }
+.warn { background: var(--c-warn-bg); color: var(--c-warn); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--c-line); vertical-align: top; }
+th { color: var(--c-muted); font-weight: 600; }
+.tablewrap { overflow-x: auto; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; border: 1px solid rgba(128,128,128,.4); }
+
+/* ───────── 휴대폰 화면: 색은 앱의 "바다 색감" 설정으로만 바뀐다 ───────── */
+.phone {
+  --fs: 1;
+  --sea1: #CBE9F7; --sea2: #7FBDE3; --sea3: #2F7FB8; --glow: rgba(255,255,255,.75);
+  --w1: #559DCF; --w2: #3F8CB5; --w3: #2A72A6; --w4: #1B5786;
+  --ink: #0E3150; --surface: #F7FBFE; --card: #FFFFFF; --text: #12263A; --muted: #5A6B7B; --line: #D6E3EE;
+  --paper: #FFF8E7; --paper-text: #12263A; --paper-muted: #5A6B7B;
+  --primary: #0B5FA5; --on-primary: #FFFFFF; --accent: #1B8475; --on-accent: #FFFFFF; --danger: #B3261E; --on-danger: #FFFFFF;
+  --chip: rgba(255,255,255,.88); --barrier: rgba(10,25,40,.5);
+  --sk: #D9E5EF; --sk-hi: #EEF4F9; --psk: #EADFC6; --psk-hi: #F6EEDB; --ghost: rgba(255,255,255,.45);
+  --glass: rgba(255,255,255,.55); --glass-line: #FFFFFF; --note: #FFF6DD; --cork: #B98B58;
+  box-sizing: content-box; width: 412px; height: 780px; transform-origin: top left; position: relative; overflow: hidden;
+  border-radius: 34px; border: 8px solid #1B2733; box-shadow: 0 18px 44px rgba(18,38,58,.28);
+  background: var(--sea2); color: var(--text); font-size: calc(14px * var(--fs)); line-height: 1.5;
+}
+.phone[data-sea="night"] {
+  --sea1: #081428; --sea2: #0D2644; --sea3: #0C3A62; --glow: rgba(190,214,255,.28);
+  --w1: #14466F; --w2: #103A5E; --w3: #0C2E4C; --w4: #08223A;
+  --ink: #DCEBFA; --surface: #101C2B; --card: #172638; --text: #E6EEF6; --muted: #9DB0C3; --line: #2A3C50;
+  --paper: #262019; --paper-text: #F1E6CF; --paper-muted: #B9AB90;
+  --primary: #7CC0F5; --on-primary: #06213A; --accent: #5FD0BD; --on-accent: #06261F; --danger: #FF9A90; --on-danger: #3A0B07;
+  --chip: rgba(20,36,56,.84); --barrier: rgba(0,0,0,.6);
+  --sk: #22344A; --sk-hi: #30475F; --psk: #3A3126; --psk-hi: #4B4032; --ghost: rgba(160,190,225,.22);
+  --glass: rgba(150,190,230,.22); --glass-line: #BFD9F2; --note: #E9DFC4; --cork: #8E6B45;
+}
+.phone * { box-sizing: border-box; }
+.phone button { font: inherit; color: inherit; cursor: pointer; }
+.screen { position: absolute; inset: 0; display: none; }
+.screen.on { display: block; }
+
+/* 바다 */
+.sea { background: linear-gradient(var(--sea1), var(--sea2) 45%, var(--sea3)); transition: background .4s; }
+.sea::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 78% 12%, var(--glow), transparent 55%); }
+.sky i { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; opacity: 0; }
+.phone[data-sea="night"] .sky i { opacity: .8; animation: tw 3.2s ease-in-out infinite; }
+.moon { position: absolute; right: 54px; top: 96px; width: 44px; height: 44px; border-radius: 50%; background: #F4F1DC; box-shadow: 0 0 34px 10px rgba(220,230,255,.35); opacity: 0; transition: opacity .4s; }
+.moon::after { content: ""; position: absolute; left: -9px; top: -5px; width: 40px; height: 40px; border-radius: 50%; background: #0A1A33; }
+.phone[data-sea="night"] .moon { opacity: 1; }
+@keyframes tw { 50% { opacity: .25; } }
+.waves { position: absolute; left: 0; right: 0; bottom: 0; height: 150px; }
+.waves svg { position: absolute; left: -40px; bottom: 0; width: 520px; height: 150px; animation: sway 7s ease-in-out infinite alternate; }
+.waves svg:nth-child(2) { animation-duration: 9s; animation-direction: alternate-reverse; }
+@keyframes sway { to { transform: translateX(34px); } }
+.tabs { position: absolute; top: 14px; left: 0; right: 0; display: flex; justify-content: center; flex-wrap: wrap; }
+.tab { padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: calc(13px * var(--fs)); color: var(--ink); opacity: .55; font-weight: 500; }
+.tab i { width: 6px; height: 4px; border-radius: 2px; background: var(--ink); opacity: .6; }
+.tab.on { opacity: 1; font-weight: 700; }
+.tab.on i { width: 18px; }
+.menu { position: absolute; left: 8px; top: 8px; width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--chip); box-shadow: 0 2px 5px rgba(0,0,0,.2); display: grid; place-items: center; }
+.menu svg, .chip svg, .fab svg { width: 20px; height: 20px; flex: none; }
+.chips { position: absolute; right: 12px; top: calc(48px + 22px * var(--fs)); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 70%; }
+.chip { min-height: 48px; padding: 6px 14px; display: flex; align-items: center; gap: 8px; border-radius: 24px; border: 0; background: var(--chip); box-shadow: 0 2px 5px rgba(0,0,0,.2); font-size: calc(14px * var(--fs)); font-weight: 600; text-align: left; }
+.fab { position: absolute; right: 16px; bottom: 20px; min-height: 56px; padding: 8px 20px; border-radius: 28px; border: 3px solid #fff; background: var(--primary); color: var(--on-primary) !important; font-weight: 700; font-size: calc(14px * var(--fs)); display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 14px rgba(0,0,0,.3); }
+.phone[data-sea="night"] .fab { border-color: #DCEBFA; }
+.bottle { position: absolute; width: 54px; height: 100px; border: 0; background: none; padding: 0; animation: bob 4.5s ease-in-out infinite; }
+.bottle:nth-of-type(2) { animation-delay: -1.5s; } .bottle:nth-of-type(3) { animation-delay: -3s; }
+@keyframes bob { 50% { transform: translateY(-8px) rotate(2deg); } }
+.bottle svg { width: 100%; height: 100%; }
+.b-glass { fill: var(--glass); stroke: var(--glass-line); stroke-width: 3; }
+.b-note { fill: var(--note); stroke: #CDB98A; stroke-width: 1.5; }
+.b-cork { fill: var(--cork); }
+.ghost .b-glass { fill: var(--ghost); stroke: none; } .ghost .b-note, .ghost .b-cork { fill: none; stroke: none; }
+.ghost { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+.loadtext { position: absolute; left: 0; right: 0; top: 520px; text-align: center; color: var(--ink); font-size: calc(13px * var(--fs)); font-weight: 600; }
+
+/* 스켈레톤 */
+.sk { display: block; height: calc(14px * var(--fs)); border-radius: 7px; background: linear-gradient(90deg, var(--sk) 25%, var(--sk-hi) 45%, var(--sk) 65%); background-size: 300% 100%; animation: shim 1.3s linear infinite; }
+.paper .sk { background-image: linear-gradient(90deg, var(--psk) 25%, var(--psk-hi) 45%, var(--psk) 65%); }
+@keyframes shim { from { background-position: 100% 0; } to { background-position: -50% 0; } }
+.screen .skel { display: none; }
+.phone.loading .screen .skel { display: block; }
+.phone.loading .screen .real { display: none !important; }
+
+/* 편지 */
+.paper { background: var(--paper); color: var(--paper-text); display: none; flex-direction: column; transition: background .4s; }
+.paper.on { display: flex; }
+.paper .top { height: 64px; display: flex; justify-content: flex-end; align-items: center; padding: 0 12px; flex: none; }
+.paper .x { width: 48px; height: 48px; border: 0; background: none; border-radius: 50%; color: var(--danger) !important; }
+.paper .x svg { width: 28px; height: 28px; }
+.paper .body { flex: 1; min-height: 0; overflow: auto; padding: 0 24px 12px; }
+.paper h3 { margin: 0; font-size: calc(17px * var(--fs)); line-height: 1.9; display: flex; flex-wrap: wrap; gap: 0 14px; align-items: center; }
+.paper h3 span { color: var(--primary); font-size: calc(14px * var(--fs)); font-weight: 700; }
+.paper .sub { font-size: calc(13px * var(--fs)); color: var(--paper-muted); line-height: 1.85; }
+.paper .text { margin: 8px 0 0; font-size: calc(16px * var(--fs)); line-height: 1.5; }
+.actions { display: flex; gap: 10px; padding: 12px 20px 20px; flex: none; }
+.actions button { flex: 1; min-height: 48px; border: 0; border-radius: 12px; font-weight: 600; font-size: calc(16px * var(--fs)); display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px; }
+.actions svg { width: 20px; height: 20px; flex: none; }
+.b-reply { background: var(--primary); color: var(--on-primary) !important; }
+.b-keep { background: var(--accent); color: var(--on-accent) !important; }
+.phone.big .actions { flex-direction: column; }
+.paper .skel .sk { margin-bottom: calc(12px * var(--fs)); }
+
+/* 받은 편지함 창 */
+.barrier { position: absolute; inset: 0; background: var(--barrier); display: flex; align-items: center; justify-content: center; padding: 24px 28px; }
+.dialog { width: 100%; max-height: 100%; overflow: auto; background: var(--surface); color: var(--text); border-radius: 24px; padding: 20px 14px 16px; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+.dialog header { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0 8px; }
+.dialog h3 { margin: 0; font-size: calc(20px * var(--fs)); }
+.dialog .close { border: 0; background: none; min-height: 48px; padding: 0 8px; color: var(--primary) !important; font-weight: 600; font-size: calc(15px * var(--fs)); }
+.dialog .help { margin: 0 8px 10px; font-size: calc(13px * var(--fs)); color: var(--muted); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-top: 8px; }
+.card .who { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+.card b { font-size: calc(14px * var(--fs)); } .card b.link { color: var(--primary); text-decoration: underline; }
+.card small { font-size: calc(13px * var(--fs)); color: var(--muted); }
+.card p { margin: 6px 0 0; font-size: calc(14px * var(--fs)); overflow-wrap: anywhere; }
+.card .sk + .sk { margin-top: calc(10px * var(--fs)); }
+
+/* 설정 서랍 */
+.drawer { position: absolute; inset: 0 auto 0 0; width: 310px; background: var(--surface); color: var(--text); border-radius: 0 20px 20px 0; padding: 56px 0 16px; overflow: auto; box-shadow: 8px 0 24px rgba(0,0,0,.3); }
+.drawer h3 { margin: 0 20px 12px; font-size: calc(20px * var(--fs)); }
+.set { padding: 14px 20px; border-top: 1px solid var(--line); }
+.set .label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; font-weight: 700; font-size: calc(14px * var(--fs)); }
+.set .label em { font-style: normal; color: var(--primary); }
+.set p { margin: 2px 0 10px; font-size: calc(12.5px * var(--fs)); color: var(--muted); }
+.pick { display: flex; flex-wrap: wrap; border: 1px solid var(--muted); border-radius: 24px; overflow: hidden; }
+.pick button { flex: 1 1 auto; min-height: 48px; padding: 6px 10px; border: 0; background: none; font-size: calc(14px * var(--fs)); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.pick button[aria-pressed="true"] { background: var(--primary); color: var(--on-primary) !important; }
+.pick svg { width: 18px; height: 18px; flex: none; }
+.set input[type=range] { width: 100%; height: 48px; margin: 0; accent-color: var(--primary); }
+.scale { display: flex; justify-content: space-between; align-items: baseline; color: var(--muted); }
+.preview { margin-top: 8px; padding: 10px 12px; border-radius: 12px; background: var(--paper); color: var(--paper-text); font-size: calc(16px * var(--fs)); line-height: 1.5; }
+.logout { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border: 0; border-top: 1px solid var(--line); background: none; width: 100%; color: var(--danger) !important; font-weight: 700; font-size: calc(15px * var(--fs)); }
+
+/* 네트워크 끊김 안내와 종료 */
+.offline { position: absolute; inset: 0; z-index: 5; display: none; }
+.phone.net-off .offline { display: flex; }
+.alert { width: 100%; background: var(--surface); color: var(--text); border-radius: 24px; padding: 22px 22px 16px; box-shadow: 0 12px 30px rgba(0,0,0,.4); text-align: left; }
+.alert .ico { width: 40px; height: 40px; color: var(--danger); }
+.alert h3 { margin: 8px 0 6px; font-size: calc(19px * var(--fs)); }
+.alert p { margin: 0 0 8px; font-size: calc(14px * var(--fs)); color: var(--muted); }
+.alert .keep, .phone.letter-open .alert .exit { display: none; }
+.phone.letter-open .alert .keep { display: block; }
+.alert p.still { color: var(--danger); font-weight: 600; min-height: 1.5em; }
+.alert button { width: 100%; min-height: 48px; margin-top: 8px; border: 0; border-radius: 12px; background: var(--primary); color: var(--on-primary) !important; font-weight: 700; font-size: calc(16px * var(--fs)); }
+.home { position: absolute; inset: 0; z-index: 6; display: none; background: radial-gradient(circle at 30% 20%, #6E8FD6, #10131C 60%); color: #fff; }
+.phone.closed .home { display: block; }
+.home .date { position: absolute; left: 26px; top: 90px; font-size: 14px; opacity: .85; }
+.home .app { position: absolute; left: 50%; top: 520px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; border: 0; background: none; color: #fff !important; font-size: 13px; }
+.home .app span { width: 62px; height: 62px; border-radius: 50%; background: #CBE9F7; display: grid; place-items: center; }
+.home .app svg { width: 30px; height: 52px; }
+.home .msg { position: absolute; left: 24px; right: 24px; top: 640px; text-align: center; font-size: 13px; opacity: .8; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sk, .ghost, .bottle, .waves svg, .sky i { animation: none !important; }
+}
+</style>
+
+<div class="wrap">
+  <h1>아침·밤바다 시안</h1>
+  <p class="lede">바다 색감(아침·밤), 불러오는 동안의 스켈레톤, 글자 크기 설정, 네트워크가 끊겼을 때의 안내와 종료를 한 화면에서 확인하는 시안입니다. 오른쪽 조작판이나 화면 속 설정을 직접 눌러 보세요. 앱 코드는 아직 바꾸지 않았습니다.</p>
+
+  <div class="stage">
+    <div class="phone-slot" id="slot">
+      <div class="phone" id="phone" data-sea="day">
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+          <symbol id="bottle" viewBox="0 0 54 100">
+            <rect class="b-cork" x="19" y="2" width="16" height="11" rx="2"/>
+            <path class="b-glass" d="M20 12h14v14c9 5 14 12 14 22v38a10 10 0 01-10 10H16A10 10 0 016 86V48c0-10 5-17 14-22z"/>
+            <rect class="b-note" x="17" y="44" width="20" height="38" rx="4" transform="rotate(-6 27 63)"/>
+          </symbol>
+        </svg>
+
+        <!-- 내 바다 -->
+        <div class="screen sea on" id="s-sea">
+          <div class="sky" id="sky" aria-hidden="true"></div><div class="moon" aria-hidden="true"></div>
+          <div class="waves" aria-hidden="true">
+            <svg viewBox="0 0 520 150" preserveAspectRatio="none"><path fill="var(--w1)" d="M0 30q65-22 130 0t130 0 130 0 130 0v120H0z"/><path fill="var(--w3)" d="M0 86q65 22 130 0t130 0 130 0 130 0v64H0z"/></svg>
+            <svg viewBox="0 0 520 150" preserveAspectRatio="none"><path fill="var(--w2)" d="M0 60q65 20 130 0t130 0 130 0 130 0v90H0z"/><path fill="var(--w4)" d="M0 116q65-18 130 0t130 0 130 0 130 0v34H0z"/></svg>
+          </div>
+          <div class="real">
+            <button class="bottle" style="left:62px;top:214px" aria-label="유리병"><svg><use href="#bottle"/></svg></button>
+            <button class="bottle" style="left:266px;top:282px" aria-label="유리병"><svg><use href="#bottle"/></svg></button>
+            <button class="bottle" style="left:140px;top:410px" aria-label="유리병"><svg><use href="#bottle"/></svg></button>
+          </div>
+          <div class="skel" aria-label="바다를 불러오는 중">
+            <div class="bottle ghost" style="left:62px;top:214px"><svg><use href="#bottle"/></svg></div>
+            <div class="bottle ghost" style="left:266px;top:282px"><svg><use href="#bottle"/></svg></div>
+            <div class="bottle ghost" style="left:140px;top:410px"><svg><use href="#bottle"/></svg></div>
+            <div class="loadtext">유리병을 찾고 있어요…</div>
+          </div>
+          <div class="tabs"><div class="tab on">내 바다<i></i></div><div class="tab">공유 바다<i></i></div></div>
+          <button class="menu" data-go="set" aria-label="메뉴(설정 열기)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+          <div class="chips">
+            <button class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4l18 8-18 8 3-8z"/></svg>보낸 편지함</button>
+            <button class="chip" data-go="inbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 14h4l1 2h6l1-2h4"/></svg>받은 편지함</button>
+          </div>
+          <button class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>편지 쓰기</button>
+        </div>
+
+        <!-- 편지 상세 -->
+        <div class="screen paper" id="s-letter">
+          <div class="top"><button class="x" data-go="sea" aria-label="버리기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+          <div class="body">
+            <div class="real">
+              <h3>haneul02 님의 편지 <span>≋ 바다 이동</span></h3>
+              <div class="sub">11월 11일</div>
+              <p class="text">오늘 퇴근길에 바다 냄새가 나는 것 같았어요. 지난번에 보내 준 편지를 다시 꺼내 읽었습니다. 밤에 읽으니 또 다르게 느껴지더라고요. 요즘은 어떻게 지내요?</p>
+            </div>
+            <div class="skel" aria-label="편지를 불러오는 중">
+              <span class="sk" style="width:52%;height:calc(18px * var(--fs))"></span>
+              <span class="sk" style="width:24%"></span>
+              <span class="sk" style="width:100%;margin-top:calc(20px * var(--fs))"></span>
+              <span class="sk" style="width:94%"></span><span class="sk" style="width:98%"></span><span class="sk" style="width:61%"></span>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="b-reply"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 7L4 12l6 5M4 12h9a7 7 0 017 7"/></svg>답장</button>
+            <button class="b-keep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 4h10v16l-5-4-5 4z"/></svg>보관</button>
+          </div>
+        </div>
+
+        <!-- 받은 편지함 -->
+        <div class="screen sea" id="s-inbox">
+          <div class="waves" aria-hidden="true"><svg viewBox="0 0 520 150" preserveAspectRatio="none"><path fill="var(--w1)" d="M0 30q65-22 130 0t130 0 130 0 130 0v120H0z"/><path fill="var(--w3)" d="M0 86q65 22 130 0t130 0 130 0 130 0v64H0z"/></svg></div>
+          <div class="barrier">
+            <div class="dialog">
+              <header><h3>받은 편지함</h3><button class="close" data-go="sea">닫기</button></header>
+              <p class="help">카드를 왼쪽으로 밀면 삭제됩니다. (확인 없음) ✓는 답장한 편지예요.</p>
+              <div class="real">
+                <div class="card"><div class="who"><b>익명</b><small>방금</small></div><p>지나가다 유리병 하나 띄워요. 좋은 하루 보내세요.</p></div>
+                <div class="card"><div class="who"><b class="link">haneul02</b><small>11월 10일</small></div><p>지난번 답장 고마웠어요. 덕분에 한 주를 잘 버텼어요.</p></div>
+                <div class="card"><div class="who"><b class="link">badaLover</b><small>11월 8일</small></div><p>처음 보내는 편지예요. 잘 도착했나요?</p></div>
+              </div>
+              <div class="skel" aria-label="편지함을 불러오는 중">
+                <div class="card"><span class="sk" style="width:38%"></span><span class="sk" style="width:88%"></span></div>
+                <div class="card"><span class="sk" style="width:46%"></span><span class="sk" style="width:72%"></span></div>
+                <div class="card"><span class="sk" style="width:34%"></span><span class="sk" style="width:80%"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 설정 -->
+        <div class="screen sea" id="s-set">
+          <div class="barrier" style="padding:0" data-go="sea"></div>
+          <div class="drawer">
+            <h3>설정</h3>
+            <div class="set">
+              <div class="label">바다 색감 <em id="seaLabel">아침바다</em></div>
+              <p>밝은 아침바다와 어두운 밤바다 중에서 골라요.</p>
+              <div class="pick" id="seaPick">
+                <button data-sea="day" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>아침바다</button>
+                <button data-sea="night" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14A8 8 0 0110 4a8 8 0 1010 10z"/></svg>밤바다</button>
+                <button data-sea="auto" aria-pressed="false">기기 설정</button>
+              </div>
+            </div>
+            <div class="set">
+              <div class="label">글자 크기 <em id="fsLabel">보통 (100%)</em></div>
+              <p>편지와 화면의 글자를 키우거나 줄여요.</p>
+              <div class="scale"><span style="font-size:12px">가</span><span style="font-size:20px">가</span></div>
+              <input type="range" id="fsRange" min="0" max="4" step="1" value="1" aria-label="글자 크기">
+              <div class="preview">미리 보기: 오늘 바다는 잔잔해요.</div>
+            </div>
+            <div class="set"><div class="label">내 바다 공개 설정 <em>비공개</em></div></div>
+            <div class="set"><div class="label">UI 숨김 대기 시간 <em>5초</em></div></div>
+            <button class="logout"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9"/></svg>로그아웃</button>
+          </div>
+        </div>
+
+        <!-- 네트워크 끊김 -->
+        <div class="offline barrier" role="alertdialog" aria-labelledby="offTitle">
+          <div class="alert">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9a14 14 0 0118 0M6.5 12.5a9 9 0 0111 0M10 16a4 4 0 014 0M4 4l16 16"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>
+            <h3 id="offTitle">네트워크에 연결할 수 없어요</h3>
+            <p class="exit">Wi-Fi나 데이터 연결을 확인한 뒤 앱을 다시 실행해 주세요. 확인을 누르면 앱을 종료합니다.</p>
+            <button class="exit" id="quit">확인 (앱 종료)</button>
+            <p class="keep">열어 둔 편지는 그대로 있어요. 앱을 종료하지 않으니, 연결을 확인한 뒤 다시 시도해 주세요.</p>
+            <p class="keep still" id="still" aria-live="polite"></p>
+            <button class="keep" id="retry">다시 시도</button>
+          </div>
+        </div>
+        <div class="home">
+          <div class="date">11월 11일 수요일</div>
+          <button class="app" id="relaunch"><span><svg class="bottle-ico"><use href="#bottle"/></svg></span>Message Bottle</button>
+          <div class="msg" id="homeMsg">앱이 종료됐어요. 아이콘을 누르면 다시 실행합니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="box">
+        <h2>화면</h2>
+        <div class="seg" id="goSeg">
+          <button data-go="sea" aria-pressed="true">내 바다</button>
+          <button data-go="letter" aria-pressed="false">편지 상세</button>
+          <button data-go="inbox" aria-pressed="false">받은 편지함</button>
+          <button data-go="set" aria-pressed="false">설정</button>
+        </div>
+      </div>
+      <div class="box">
+        <h2>① 바다 색감</h2>
+        <div class="seg" id="seaSeg">
+          <button data-sea="day" aria-pressed="true">아침바다</button>
+          <button data-sea="night" aria-pressed="false">밤바다</button>
+        </div>
+        <p class="hint">앱의 설정에서는 "기기 설정"(휴대폰의 어두운 화면 설정을 따름)도 고를 수 있게 했습니다.</p>
+      </div>
+      <div class="box">
+        <h2>② 스켈레톤 (불러오는 동안)</h2>
+        <div class="seg" id="loadSeg">
+          <button data-ms="1500" aria-pressed="true">1.5초</button>
+          <button data-ms="3500" aria-pressed="false">3.5초</button>
+          <button data-ms="0" aria-pressed="false">계속 보기</button>
+        </div>
+        <button class="act" id="reload">다시 불러오기</button>
+        <p class="hint">화면을 바꿀 때마다 한 번씩 보여 줍니다. 설정은 기기에 저장된 값이라 스켈레톤이 없습니다.</p>
+      </div>
+      <div class="box">
+        <h2>③ 글자 크기</h2>
+        <div class="seg" id="fsSeg">
+          <button data-i="0" aria-pressed="false">작게 85%</button>
+          <button data-i="1" aria-pressed="true">보통 100%</button>
+          <button data-i="2" aria-pressed="false">크게 115%</button>
+          <button data-i="3" aria-pressed="false">더 크게 130%</button>
+          <button data-i="4" aria-pressed="false">가장 크게 140%</button>
+        </div>
+        <p class="hint">130%부터는 편지의 [답장]·[보관]이 위아래로 쌓이고, 글이 길어지면 줄바꿈하거나 스크롤합니다.</p>
+      </div>
+      <div class="box">
+        <h2>④ 네트워크</h2>
+        <div class="seg" id="netSeg">
+          <button data-net="on" aria-pressed="true">연결됨</button>
+          <button data-net="off" aria-pressed="false">끊김</button>
+        </div>
+        <p class="hint">끊기면 안내 창이 뜨고, 확인을 누르면 앱이 종료됩니다. 끊긴 채로 다시 실행해도 같은 안내가 나옵니다. 단, 편지를 열어 둔 동안에는 종료하지 않고 [다시 시도]만 보여 줍니다("편지 상세" 화면에서 끊어 보세요).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage" style="margin-top:28px">
+    <div class="box" style="flex:1 1 380px;min-width:0">
+      <h2>아침바다와 밤바다의 색</h2>
+      <div class="tablewrap"><table>
+        <tr><th>역할</th><th>아침바다 (지금 앱)</th><th>밤바다 (새 제안)</th></tr>
+        <tr><td>바다 바탕</td><td><i class="sw" style="background:#CBE9F7"></i>#CBE9F7 → <i class="sw" style="background:#2F7FB8"></i>#2F7FB8</td><td><i class="sw" style="background:#081428"></i>#081428 → <i class="sw" style="background:#0C3A62"></i>#0C3A62, 달과 별</td></tr>
+        <tr><td>창·시트 바탕</td><td><i class="sw" style="background:#F7FBFE"></i>#F7FBFE</td><td><i class="sw" style="background:#101C2B"></i>#101C2B</td></tr>
+        <tr><td>본문 글자</td><td><i class="sw" style="background:#12263A"></i>#12263A</td><td><i class="sw" style="background:#E6EEF6"></i>#E6EEF6</td></tr>
+        <tr><td>편지지 / 글자</td><td><i class="sw" style="background:#FFF8E7"></i>#FFF8E7</td><td><i class="sw" style="background:#262019"></i>#262019 / <i class="sw" style="background:#F1E6CF"></i>#F1E6CF</td></tr>
+        <tr><td>주요 행동</td><td><i class="sw" style="background:#0B5FA5"></i>#0B5FA5 + 흰 글자</td><td><i class="sw" style="background:#7CC0F5"></i>#7CC0F5 + 어두운 글자</td></tr>
+        <tr><td>강조(보관)</td><td><i class="sw" style="background:#1B8475"></i>#1B8475</td><td><i class="sw" style="background:#5FD0BD"></i>#5FD0BD</td></tr>
+        <tr><td>오류·버리기</td><td><i class="sw" style="background:#B3261E"></i>#B3261E</td><td><i class="sw" style="background:#FF9A90"></i>#FF9A90</td></tr>
+      </table></div>
+    </div>
+    <div class="box" style="flex:1 1 380px;min-width:0">
+      <h2>앱에 넣기 전에 정할 것</h2>
+      <ul class="notes">
+        <li><b>스켈레톤을 넣을 곳</b>: 내 바다(유리병 자리), 편지 상세, 보낸·받은 편지함, 받는 사람 검색 결과, 다른 사람의 바다. <small>공유 바다의 낚기는 낚시 움직임이 이미 대기 표시라서 그대로 둡니다.</small></li>
+        <li><b>글자 크기 범위</b>: 85% ~ 140%, 다섯 단계로 제안합니다. <small>140%를 넘기면 바다의 버튼과 편지함 카드가 화면 폭을 넘기 시작합니다.</small></li>
+        <li><b>바다 색감 기본값</b>: 아침바다 / 밤바다 / 기기 설정 중 무엇을 처음 값으로 할지.</li>
+      </ul>
+      <p class="warn" style="margin-top:12px"><b>정해진 것 (2026-11-11):</b> 편지를 열어 둔 채 앱이 종료되면 그 편지는 버려지므로, 편지를 열어 둔 동안 네트워크가 끊기면 앱을 종료하지 않고 편지를 유지한 채 다시 시도하게 합니다. 그 밖의 화면에서는 안내 후 종료합니다.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var phone = document.getElementById('phone'), slot = document.getElementById('slot');
+  var FS = [[0.85, '작게 (85%)'], [1, '보통 (100%)'], [1.15, '크게 (115%)'], [1.3, '더 크게 (130%)'], [1.4, '가장 크게 (140%)']];
+  var state = { screen: 'sea', net: true, ms: 1500, timer: 0 };
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function press(box, test) { $$('button', box).forEach(function (b) { b.setAttribute('aria-pressed', test(b) ? 'true' : 'false'); }); }
+
+  function fit() { var s = Math.min(1, slot.clientWidth / 428); phone.style.transform = 'scale(' + s + ')'; slot.style.height = (796 * s) + 'px'; }
+  window.addEventListener('resize', fit); fit();
+
+  var sky = document.getElementById('sky');
+  for (var i = 0; i < 26; i++) { var st = document.createElement('i'); st.style.left = ((i * 53) % 400 + 6) + 'px'; st.style.top = ((i * 37) % 300 + 20) + 'px'; st.style.animationDelay = (-(i % 7) * 0.45) + 's'; sky.appendChild(st); }
+
+  function load() {
+    clearTimeout(state.timer);
+    if (state.screen === 'set') { phone.classList.remove('loading'); return; }
+    phone.classList.add('loading');
+    if (state.ms) state.timer = setTimeout(function () { phone.classList.remove('loading'); }, state.ms);
+  }
+  function go(name) {
+    state.screen = name;
+    $$('.screen', phone).forEach(function (s) { s.classList.toggle('on', s.id === 's-' + name); });
+    phone.classList.toggle('letter-open', name === 'letter');
+    press(document.getElementById('goSeg'), function (b) { return b.dataset.go === name; });
+    load();
+  }
+  function setSea(v) {
+    var dark = v === 'night' || (v === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    phone.dataset.sea = dark ? 'night' : 'day';
+    press(document.getElementById('seaPick'), function (b) { return b.dataset.sea === v; });
+    press(document.getElementById('seaSeg'), function (b) { return v !== 'auto' && b.dataset.sea === v; });
+    document.getElementById('seaLabel').textContent = v === 'auto' ? '기기 설정' : (dark ? '밤바다' : '아침바다');
+  }
+  function setFs(i) {
+    i = +i; phone.style.setProperty('--fs', FS[i][0]); phone.classList.toggle('big', FS[i][0] >= 1.3);
+    document.getElementById('fsRange').value = i; document.getElementById('fsLabel').textContent = FS[i][1];
+    press(document.getElementById('fsSeg'), function (b) { return +b.dataset.i === i; });
+  }
+  function setNet(on) {
+    state.net = on;
+    press(document.getElementById('netSeg'), function (b) { return (b.dataset.net === 'on') === on; });
+    if (!on && !phone.classList.contains('closed')) phone.classList.add('net-off');
+    if (on) phone.classList.remove('net-off');
+    document.getElementById('still').textContent = '';
+    document.getElementById('homeMsg').textContent = '앱이 종료됐어요. 아이콘을 누르면 다시 실행합니다.';
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-go]'); if (b) { go(b.dataset.go); return; }
+    b = e.target.closest('[data-sea]'); if (b && b.tagName === 'BUTTON') { setSea(b.dataset.sea); return; }
+    b = e.target.closest('#fsSeg button'); if (b) { setFs(b.dataset.i); return; }
+    b = e.target.closest('#netSeg button'); if (b) { setNet(b.dataset.net === 'on'); return; }
+    b = e.target.closest('#loadSeg button'); if (b) { state.ms = +b.dataset.ms; press(document.getElementById('loadSeg'), function (x) { return x === b; }); load(); return; }
+    if (e.target.closest('#reload')) { load(); return; }
+    if (e.target.closest('.bottle') && !phone.classList.contains('loading')) { go('letter'); return; }
+    if (e.target.closest('#retry')) {
+      if (state.net) phone.classList.remove('net-off');
+      else document.getElementById('still').textContent = '아직 연결되지 않았어요.';
+      return;
+    }
+    if (e.target.closest('#quit')) { phone.classList.remove('net-off'); phone.classList.add('closed'); return; }
+    if (e.target.closest('#relaunch')) {
+      phone.classList.remove('closed'); go('sea');
+      if (!state.net) phone.classList.add('net-off');
+    }
+  });
+  document.getElementById('fsRange').addEventListener('input', function (e) { setFs(e.target.value); });
+  load();
+})();
+</script>

@@ -1,0 +1,461 @@
+<title>유리병 낚기 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root {
+  --c-bg: #E9EEF3; --c-surface: #FFFFFF; --c-text: #12263A; --c-muted: #5A6B7B;
+  --c-line: #D6E3EE; --c-chip: #F4F8FB; --c-on: #0B5FA5; --c-on-text: #FFFFFF; --c-now: #E2F0FA;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-bg: #0E1822; --c-surface: #16232F; --c-text: #E6EEF5; --c-muted: #9FB1C1;
+    --c-line: #2B3C4A; --c-chip: #1E2E3B; --c-on: #5AA9E6; --c-on-text: #0E1822; --c-now: #1F3A52;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --c-bg: #0E1822; --c-surface: #16232F; --c-text: #E6EEF5; --c-muted: #9FB1C1;
+  --c-line: #2B3C4A; --c-chip: #1E2E3B; --c-on: #5AA9E6; --c-on-text: #0E1822; --c-now: #1F3A52;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--c-bg); color: var(--c-text);
+  font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  font-size: 15px; line-height: 1.55;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 900px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; text-wrap: balance; }
+.lede { margin: 0 0 24px; color: var(--c-muted); max-width: 60ch; }
+.stage { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.phone-slot { width: min(428px, 100%); flex: 0 0 auto; }
+.side { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.box { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: 14px; padding: 16px; }
+.box h2 { font-size: 13px; margin: 0 0 10px; color: var(--c-muted); font-weight: 600; letter-spacing: .02em; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg + h2 { margin-top: 16px; }
+.seg button {
+  font: inherit; font-size: 14px; min-height: 40px; padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--c-line); background: var(--c-chip); color: var(--c-text); cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--c-on); border-color: var(--c-on); color: var(--c-on-text); font-weight: 700; }
+.replay { font: inherit; font-weight: 700; min-height: 44px; width: 100%; margin-top: 16px; border-radius: 12px; border: 0; background: var(--c-on); color: var(--c-on-text); cursor: pointer; }
+button:focus-visible { outline: 3px solid #7DB8E8; outline-offset: 2px; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.steps li { display: flex; gap: 10px; padding: 8px 10px; border-radius: 10px; align-items: baseline; }
+.steps li.now { background: var(--c-now); }
+.steps .n { font-variant-numeric: tabular-nums; color: var(--c-muted); width: 1.2em; flex: none; }
+.steps .d { flex: 1; min-width: 0; }
+.steps .d small { display: block; color: var(--c-muted); font-size: 13px; }
+.steps .s { color: var(--c-muted); font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.notes { margin: 0; padding-left: 18px; color: var(--c-muted); font-size: 14px; }
+.notes li + li { margin-top: 4px; }
+
+/* 휴대폰 화면: 색은 앱 테마 그대로 한 가지로 고정한다. */
+.phone { box-sizing: content-box; width: 412px; height: 780px; transform-origin: top left; position: relative; overflow: hidden; border-radius: 34px; border: 8px solid #1B2733; background: #7FBDE3; color: #12263A; box-shadow: 0 18px 44px rgba(18,38,58,.28); }
+.phone canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.tabs { position: absolute; top: 14px; left: 0; right: 0; display: flex; justify-content: center; }
+.tab { padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 13px; color: rgba(14,49,80,.55); font-weight: 500; }
+.tab i { width: 6px; height: 4px; border-radius: 2px; background: rgba(14,49,80,.35); }
+.tab.on { color: #0E3150; font-weight: 700; }
+.tab.on i { width: 18px; background: rgba(14,49,80,.9); }
+.chip { position: absolute; top: 62px; right: 12px; min-height: 48px; padding: 0 14px; display: flex; align-items: center; gap: 8px; border-radius: 24px; background: rgba(255,255,255,.88); box-shadow: 0 2px 6px rgba(0,0,0,.18); font-size: 14px; font-weight: 600; }
+.chip svg { width: 20px; height: 20px; }
+.hello { position: absolute; left: 32px; right: 32px; top: 250px; text-align: center; color: #0E3150; transition: opacity calc(.25s * var(--k, 1)); }
+.hello svg { width: 44px; height: 44px; }
+.hello b { display: block; font-size: 20px; margin-top: 4px; }
+.hello p { margin: 4px 0 0; font-size: 14px; line-height: 1.5; }
+.phone.busy .hello { opacity: 0; }
+.tabs, .chip { transition: opacity calc(.2s * var(--k, 1)); }
+.phone.busy .tabs, .phone.busy .chip { opacity: 0; pointer-events: none; }
+.tapme { position: absolute; left: 50%; top: 220px; width: 240px; margin-left: -120px; padding: 150px 0 0; border: 0; background: none; font: inherit; cursor: pointer; display: flex; justify-content: center; opacity: 0; pointer-events: none; transition: opacity calc(.3s * var(--k, 1)); }
+.tapme span { padding: 8px 14px; border-radius: 20px; background: rgba(255,255,255,.88); color: #12263A; font-size: 14px; font-weight: 600; }
+.phone.held .tapme { opacity: 1; pointer-events: auto; }
+.fish {
+  position: absolute; left: 50%; bottom: 28px; width: 92px; height: 92px; margin-left: -46px;
+  border-radius: 50%; border: 3px solid #fff; background: #0B5FA5; color: #fff; cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0,0,0,.3); font: inherit; font-size: 13px; font-weight: 700;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  transition: transform calc(.28s * var(--k, 1)) cubic-bezier(.4,0,.2,1), opacity calc(.2s * var(--k, 1));
+}
+.fish svg { width: 32px; height: 32px; }
+.phone.busy .fish { transform: translateY(150px) scale(.8); opacity: 0; pointer-events: none; }
+.status { position: absolute; left: 0; right: 0; bottom: 40px; text-align: center; font-size: 14px; font-weight: 600; color: #fff; text-shadow: 0 1px 3px rgba(10,50,90,.6); opacity: 0; transition: opacity calc(.25s * var(--k, 1)); pointer-events: none; }
+.phone.busy .status { opacity: 1; }
+.letter {
+  position: absolute; inset: 0; background: #FFF8E7; display: flex; flex-direction: column;
+  clip-path: circle(0px at 206px 270px); visibility: hidden;
+  transition: clip-path calc(.45s * var(--k, 1)) cubic-bezier(.3,0,.2,1), visibility 0s calc(.45s * var(--k, 1));
+}
+.letter.open { clip-path: circle(900px at 206px 270px); visibility: visible; transition: clip-path calc(.45s * var(--k, 1)) cubic-bezier(.3,0,.2,1); }
+.letter .top { height: 64px; display: flex; justify-content: flex-end; align-items: center; padding: 0 12px; }
+.letter .x { width: 48px; height: 48px; border: 0; background: none; border-radius: 50%; cursor: pointer; color: #12263A; }
+.letter .x svg { width: 28px; height: 28px; }
+.letter .body { flex: 1; padding: 0 24px; overflow: auto; }
+.letter h3 { margin: 0; font-size: 17px; line-height: 32px; }
+.letter .sub { font-size: 13px; line-height: 24px; color: #5A6B7B; }
+.letter .text { margin: 8px 0 0; font-size: 17px; line-height: 32px; }
+.letter .foot { padding: 12px 20px 20px; text-align: center; }
+.letter .foot p { margin: 0 0 10px; font-size: 12.5px; color: #5A6B7B; }
+.letter .reply { width: 100%; min-height: 48px; border: 0; border-radius: 24px; background: #0B5FA5; color: #fff; font: inherit; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.letter .reply svg { width: 20px; height: 20px; }
+.toast { position: absolute; left: 20px; right: 20px; bottom: 24px; min-height: 48px; padding: 12px 18px; border-radius: 14px; background: #12263A; color: #fff; font-size: 14.5px; font-weight: 600; text-align: center; transform: translateY(90px); opacity: 0; transition: transform calc(.25s * var(--k, 1)), opacity calc(.25s * var(--k, 1)); pointer-events: none; }
+.toast.show { transform: none; opacity: 1; }
+.phone.toasting .fish { transform: translateY(-78px); }
+</style>
+
+<div class="wrap">
+  <h1>유리병 낚기 시안</h1>
+  <p class="lede">공유 바다에서 "유리병 낚기"를 누른 뒤 편지가 열리기까지의 움직임입니다. 화면 속 버튼을 직접 눌러 보세요.</p>
+
+  <div class="stage">
+    <div class="phone-slot" id="slot">
+      <div class="phone" id="phone">
+        <canvas id="cv" aria-hidden="true"></canvas>
+        <div class="tabs"><div class="tab">내 바다<i></i></div><div class="tab on">공유 바다<i></i></div></div>
+        <div class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>편지 띄우기</div>
+        <div class="hello">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+          <b>공유 바다</b>
+          <p>모두가 함께 쓰는 바다예요.<br>누군가 띄운 유리병을 낚아 보세요.</p>
+        </div>
+        <div class="status" id="status" aria-live="polite"></div>
+        <button class="tapme" id="tapme"><span>유리병을 눌러 열어 보세요</span></button>
+        <button class="fish" id="fish">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 3v11a5 5 0 01-10 0v-2l3 2.5"/><circle cx="15" cy="3.5" r="1.2" fill="currentColor"/></svg>
+          유리병 낚기
+        </button>
+        <div class="letter" id="letter">
+          <div class="top"><button class="x" id="close" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+          <div class="body">
+            <h3>익명의 유리병</h3>
+            <div class="sub">공유 바다에서 낚았어요</div>
+            <div class="sub">2026.11.11 14:20</div>
+            <p class="text">오늘 하늘이 유난히 맑았어요. 이 편지를 낚은 분도 좋은 하루 보내고 있으면 좋겠어요.</p>
+          </div>
+          <div class="foot">
+            <p>보관은 할 수 없어요. 답장하지 않고 닫으면 이 편지는 공유 바다에 남아요.</p>
+            <div class="reply"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 7L4 12l6 5M4 12h9a7 7 0 017 7"/></svg>답장</div>
+          </div>
+        </div>
+        <div class="toast" id="toast">남아있는 편지가 없어요!</div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="box">
+        <h2>낚은 결과</h2>
+        <div class="seg" id="seg-result">
+          <button data-v="caught" aria-pressed="true">편지가 낚임</button>
+          <button data-v="empty" aria-pressed="false">남은 편지 없음</button>
+        </div>
+        <h2>서버 응답까지 걸리는 시간</h2>
+        <div class="seg" id="seg-delay">
+          <button data-v="0.1" aria-pressed="true">바로</button>
+          <button data-v="1.5" aria-pressed="false">1.5초</button>
+          <button data-v="3" aria-pressed="false">3초</button>
+        </div>
+        <h2>재생 속도</h2>
+        <div class="seg" id="seg-speed">
+          <button data-v="1" aria-pressed="true">1배</button>
+          <button data-v="0.3" aria-pressed="false">느리게 (0.3배)</button>
+        </div>
+        <button class="replay" id="replay">처음부터 다시 보기</button>
+      </div>
+
+      <div class="box">
+        <h2>움직임 순서</h2>
+        <ol class="steps" id="steps"></ol>
+      </div>
+
+      <div class="box">
+        <h2>정한 것</h2>
+        <ul class="notes">
+          <li>버튼을 누르면 버튼이 아래로 빠지고, 그 자리에 낚싯줄이 내려옵니다. 이때부터 편지를 닫을 때까지 위쪽 표시와 "편지 띄우기"도 숨깁니다.</li>
+          <li>올라온 유리병은 눌러야 편지가 열립니다. 유리병 둘레의 빛 고리와 안내 문구로 알려 줍니다.</li>
+          <li>찌가 떠 있는 동안이 서버 응답을 기다리는 시간입니다. 응답이 빨라도 최소 0.9초는 보여 줍니다.</li>
+          <li>편지가 없으면 빈 바늘만 올라오고, 그 뒤에 안내 문구가 뜹니다.</li>
+          <li>편지를 닫으면 버튼이 제자리로 돌아옵니다.</li>
+          <li>"편지 띄우기" 버튼은 위쪽 "내 바다 / 공유 바다" 표시와 겹치지 않게 표시 바로 아랫줄 오른쪽에 둡니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var W = 412, H = 780, OW = 428, OH = 796; // 화면 안쪽 크기와 테두리를 포함한 바깥 크기
+  var phone = document.getElementById('phone'), slot = document.getElementById('slot');
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var fishBtn = document.getElementById('fish'), letter = document.getElementById('letter');
+  var toast = document.getElementById('toast'), statusEl = document.getElementById('status');
+  var stepsEl = document.getElementById('steps');
+
+  var opt = { result: 'caught', delay: 0.1, speed: 1 };
+  var X0 = 206, LAYER = 2, HANG = 46, TOP_Y = 250, EMPTY_Y = 330;
+  var D = { cast: 0.5, waitMin: 0.9, bite: 0.45, reel: 0.9, hold: 0.5, open: 0.45, emptyReel: 0.6, emptyHold: 0.35, retract: 0.35 };
+
+  var STEPS = {
+    caught: [
+      ['cast', '던지기', '버튼이 빠지고 낚싯줄이 내려와 물에 닿는다', D.cast + '초'],
+      ['wait', '기다리기', '찌가 파도를 따라 흔들린다 (서버 응답 대기)', '최소 ' + D.waitMin + '초'],
+      ['bite', '입질', '찌가 두 번 쑥 들어간다', D.bite + '초'],
+      ['reel', '끌어올리기', '유리병이 물을 튀기며 올라와 흔들린다', (D.reel + D.hold) + '초'],
+      ['held', '누르기 기다림', '유리병 둘레에 빛 고리가 퍼지고 안내가 뜬다. 눌러야 열린다', '누를 때까지'],
+      ['open', '편지 펼치기', '유리병 자리에서 편지지가 퍼져 나온다', D.open + '초']
+    ],
+    empty: [
+      ['cast', '던지기', '버튼이 빠지고 낚싯줄이 내려와 물에 닿는다', D.cast + '초'],
+      ['wait', '기다리기', '찌가 파도를 따라 흔들린다 (서버 응답 대기)', '최소 ' + D.waitMin + '초'],
+      ['reel', '빈 바늘 올리기', '입질 없이 바늘만 올라온다', (D.emptyReel + D.emptyHold) + '초'],
+      ['retract', '줄 거두기', '줄이 위로 사라지고 버튼이 돌아온다', D.retract + '초'],
+      ['toast', '안내', '"남아있는 편지가 없어요!" (아이콘 없음)', '']
+    ]
+  };
+
+  function renderSteps() {
+    stepsEl.innerHTML = '';
+    STEPS[opt.result].forEach(function (s, i) {
+      var li = document.createElement('li');
+      li.dataset.k = s[0];
+      li.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="d">' + s[1] + '<small>' + s[2] + '</small></span><span class="s">' + s[3] + '</span>';
+      stepsEl.appendChild(li);
+    });
+  }
+  function markStep(k) {
+    Array.prototype.forEach.call(stepsEl.children, function (li) { li.classList.toggle('now', li.dataset.k === k); });
+  }
+
+  // ---- 화면 크기 ----
+  function fit() {
+    var s = Math.min(1, slot.clientWidth / OW);
+    phone.style.transform = 'scale(' + s + ')';
+    slot.style.height = (OH * s) + 'px';
+    var dpr = Math.min(3, (window.devicePixelRatio || 1) * s);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  }
+  fit(); window.addEventListener('resize', fit);
+
+  // ---- 파도 (왼쪽에서 오른쪽으로만 흐른다) ----
+  var LAM = [380, 210, 120], SPD = [70, 50, 36], AMP = [3, 4, 3.2];
+  var FILL = ['rgba(255,255,255,.25)', 'rgba(126,188,227,.6)', 'rgba(63,143,198,.78)', 'rgba(36,110,168,.93)'];
+  function surf(i, x, t) {
+    var y = H - 196 + i * 28;
+    for (var j = 0; j < 3; j++) {
+      y += AMP[j] * (1 + i * 0.15) * Math.sin(2 * Math.PI * (x - t * SPD[j] * (0.7 + 0.15 * i)) / LAM[j] + i * 1.7 + j);
+    }
+    return y;
+  }
+  function drawLayer(i, t) {
+    ctx.beginPath(); ctx.moveTo(0, H);
+    for (var x = 0; x <= W; x += 6) ctx.lineTo(x, surf(i, x, t));
+    ctx.lineTo(W, H); ctx.closePath(); ctx.fillStyle = FILL[i]; ctx.fill();
+  }
+
+  // ---- 물방울, 물결 ----
+  var drops = [], rings = [];
+  function splash(x, y, n, power) {
+    for (var i = 0; i < n; i++) {
+      var a = -Math.PI / 2 + (Math.random() - 0.5) * 1.5;
+      var v = power * (0.5 + Math.random() * 0.7);
+      drops.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.7, r: 1.5 + Math.random() * 1.8 });
+    }
+  }
+  function ring(size) { rings.push({ age: 0, size: size || 1 }); }
+
+  // ---- 유리병 (기존 시안과 같은 그림) ----
+  var BODY = new Path2D('M24 14h12v10c10 6 16 14 16 28v40c0 8-6 14-14 14H22c-8 0-14-6-14-14V52c0-14 6-22 16-28z');
+  var LINES = new Path2D('M24 56h12M24 63h12M24 70h9');
+  function rrect(x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function drawBottle(hx, hy, ang) {
+    ctx.save(); ctx.translate(hx, hy); ctx.rotate(ang); ctx.scale(0.86, 0.86); ctx.translate(-30, -1);
+    rrect(22, 2, 16, 12, 3); ctx.fillStyle = '#B98A5A'; ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fill(BODY);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke(BODY);
+    ctx.save(); ctx.translate(30, 68); ctx.rotate(-8 * Math.PI / 180); ctx.translate(-30, -68);
+    rrect(20, 46, 20, 44, 4); ctx.fillStyle = '#FFF8E7'; ctx.fill(); ctx.strokeStyle = '#D9C9A0'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = '#C9B787'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.stroke(LINES);
+    ctx.restore();
+    ctx.globalAlpha = 0.7; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(14, 56); ctx.lineTo(14, 90); ctx.stroke();
+    ctx.restore();
+  }
+  function drawHook(hx, hy, ang) {
+    ctx.save(); ctx.translate(hx, hy); ctx.rotate(ang);
+    ctx.strokeStyle = '#4A5A68'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 12); ctx.arc(-6, 12, 6, 0, Math.PI * 0.95); ctx.stroke();
+    ctx.restore();
+  }
+  function drawFloat(x, y) {
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#E2513F'; ctx.beginPath(); ctx.arc(x, y, 7, Math.PI, 0); ctx.fill();
+    ctx.strokeStyle = '#4A5A68'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x, y - 7); ctx.lineTo(x, y - 14); ctx.stroke();
+  }
+
+  // ---- 진행 상태 ----
+  var phase = 'idle', pt = 0, wt = 0, swingT = 0, timers = [];
+  function setPhase(p) { phase = p; pt = 0; }
+  function later(fn, sec) { timers.push(setTimeout(fn, sec * 1000 / opt.speed)); }
+  function reset() {
+    timers.forEach(clearTimeout); timers = [];
+    drops = []; rings = []; setPhase('idle');
+    phone.classList.remove('busy', 'toasting', 'held'); letter.classList.remove('open'); toast.classList.remove('show');
+    statusEl.textContent = ''; markStep('');
+  }
+  function start() {
+    if (phase !== 'idle') return;
+    toast.classList.remove('show'); phone.classList.remove('toasting');
+    phone.classList.add('busy'); statusEl.textContent = '낚는 중…';
+    setPhase('cast'); markStep('cast');
+  }
+  function eOut(p) { return 1 - Math.pow(1 - p, 3); }
+  function clamp(p) { return p < 0 ? 0 : p > 1 ? 1 : p; }
+
+  // 낚싯줄 끝(바늘)의 위치와 유리병 기울기
+  function rig(t) {
+    var sy = surf(LAYER, X0, t), r = { x: X0, y: 0, ang: 0, slack: 0, bottle: false, hook: true, show: true };
+    if (phase === 'cast') { var p = clamp(pt / D.cast); r.y = -30 + (sy + HANG + 30) * p * p; }
+    else if (phase === 'wait') { r.y = sy + HANG; r.slack = 10 * Math.sin(t * 1.4); }
+    else if (phase === 'bite') { r.y = sy + HANG + 16 * Math.abs(Math.sin(clamp(pt / D.bite) * Math.PI * 2)); }
+    else if (phase === 'reel' || phase === 'hold' || phase === 'held' || phase === 'open') {
+      var top = opt.result === 'caught' ? TOP_Y : EMPTY_Y;
+      var dur = opt.result === 'caught' ? D.reel : D.emptyReel;
+      var q = phase === 'reel' ? eOut(clamp(pt / dur)) : 1;
+      r.y = sy + HANG + (top - sy - HANG) * q;
+      r.ang = 0.38 * Math.sin(swingT * 6.2) * Math.exp(-1.9 * swingT);
+      r.x = X0 + 5 * Math.sin(swingT * 6.2) * Math.exp(-1.9 * swingT);
+      r.bottle = opt.result === 'caught';
+    }
+    else if (phase === 'retract') { r.y = EMPTY_Y - (EMPTY_Y + 60) * Math.pow(clamp(pt / D.retract), 2); }
+    else r.show = false;
+    return r;
+  }
+
+  function step(dt, t) {
+    pt += dt;
+    var sy = surf(LAYER, X0, t);
+    if (phase === 'cast' && pt >= D.cast) { splash(X0, sy, 9, 150); ring(1); setPhase('wait'); wt = 0; markStep('wait'); }
+    else if (phase === 'wait') {
+      wt += dt;
+      if (Math.floor(wt / 1.1) !== Math.floor((wt - dt) / 1.1)) ring(0.6);
+      if (pt >= Math.max(D.waitMin, opt.delay)) {
+        if (opt.result === 'caught') { setPhase('bite'); markStep('bite'); ring(0.8); statusEl.textContent = '뭔가 걸렸어요!'; }
+        else { setPhase('reel'); swingT = 0; markStep('reel'); splash(X0, sy, 5, 110); ring(0.8); statusEl.textContent = ''; }
+      }
+    }
+    else if (phase === 'bite') {
+      if (pt - dt < D.bite / 2 && pt >= D.bite / 2) ring(0.8);
+      if (pt >= D.bite) { setPhase('reel'); swingT = 0; markStep('reel'); splash(X0, sy, 16, 230); ring(1.4); statusEl.textContent = ''; }
+    }
+    else if (phase === 'reel') {
+      swingT += dt;
+      var caught = opt.result === 'caught';
+      if (Math.random() < dt * (caught ? 26 : 12)) {
+        var g = rig(t);
+        drops.push({ x: g.x + (Math.random() - 0.5) * (caught ? 30 : 8), y: g.y + (caught ? 92 : 18), vx: 0, vy: 30, life: 0.8, r: 1.4 + Math.random() * 1.4 });
+      }
+      if (pt >= (caught ? D.reel : D.emptyReel)) setPhase('hold');
+    }
+    else if (phase === 'hold') {
+      swingT += dt;
+      if (opt.result === 'caught') {
+        if (pt >= D.hold) { setPhase('held'); markStep('held'); phone.classList.add('held'); }
+      } else if (pt >= D.emptyHold) { setPhase('retract'); markStep('retract'); }
+    }
+    else if (phase === 'open' || phase === 'held') swingT += dt;
+    else if (phase === 'retract' && pt >= D.retract) {
+      setPhase('idle'); phone.classList.remove('busy'); phone.classList.add('toasting'); toast.classList.add('show'); markStep('toast');
+      later(function () { toast.classList.remove('show'); phone.classList.remove('toasting'); markStep(''); }, 2.4);
+    }
+
+    drops.forEach(function (d) { d.vy += 620 * dt; d.x += d.vx * dt; d.y += d.vy * dt; d.life -= dt; });
+    drops = drops.filter(function (d) { return d.life > 0 && d.y < H; });
+    rings.forEach(function (r) { r.age += dt; });
+    rings = rings.filter(function (r) { return r.age < 1.3; });
+  }
+
+  function draw(t) {
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#CBE9F7'); g.addColorStop(0.45, '#7FBDE3'); g.addColorStop(1, '#2F7FB8');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    var rg = ctx.createRadialGradient(W * 0.78, H * 0.12, 0, W * 0.78, H * 0.12, W * 0.8);
+    rg.addColorStop(0, 'rgba(255,255,255,.75)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+
+    drawLayer(0, t); drawLayer(1, t);
+
+    // 낚싯줄과 유리병은 앞쪽 파도 뒤에 그려서 물에 잠긴 부분이 가려진다.
+    var r = rig(t);
+    if (r.show) {
+      var fx = r.x, fy = r.y - HANG;
+      ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(X0, -10); ctx.quadraticCurveTo(X0 + r.slack, fy * 0.5, fx, fy - 14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(r.x, r.y); ctx.stroke();
+      drawFloat(fx, fy);
+      if (phase === 'held') {
+        for (var i = 0; i < 2; i++) {
+          var hp = ((pt / 1.4) + i * 0.5) % 1;
+          ctx.strokeStyle = 'rgba(255,255,255,' + (0.75 * (1 - hp)) + ')'; ctx.lineWidth = 3 * (1 - hp) + 0.5;
+          ctx.beginPath(); ctx.arc(r.x, r.y + 48, 44 + 26 * hp, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+      if (r.bottle) drawBottle(r.x, r.y, r.ang); else drawHook(r.x, r.y, r.ang);
+    }
+
+    drawLayer(2, t);
+    var sy = surf(LAYER, X0, t);
+    rings.forEach(function (k) {
+      var p = k.age / 1.3;
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 * (1 - p)) + ')'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(X0, sy + 2, (10 + 46 * p) * k.size, (3 + 12 * p) * k.size, 0, 0, Math.PI * 2); ctx.stroke();
+    });
+    drawLayer(3, t);
+
+    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    drops.forEach(function (d) { ctx.globalAlpha = Math.min(1, d.life * 2.5); ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fill(); });
+    ctx.globalAlpha = 1;
+  }
+
+  var last = performance.now(), time = 0;
+  function frame(now) {
+    var dt = Math.min(0.25, (now - last) / 1000); last = now;
+    time += dt; // 파도는 재생 속도와 무관하게 흐른다
+    var left = dt * opt.speed;
+    while (left > 0) { var h = Math.min(left, 0.016); step(h, time); left -= h; }
+    draw(time);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---- 조작 ----
+  fishBtn.addEventListener('click', start);
+  document.getElementById('tapme').addEventListener('click', function () {
+    if (phase !== 'held') return;
+    phone.classList.remove('held'); setPhase('open'); markStep('open'); letter.classList.add('open');
+    later(function () { setPhase('letter'); }, D.open);
+  });
+  document.getElementById('close').addEventListener('click', function () {
+    letter.classList.remove('open'); phone.classList.remove('busy'); setPhase('idle'); markStep('');
+  });
+  document.getElementById('replay').addEventListener('click', function () { reset(); later(start, 0.35); });
+  function seg(id, key, num) {
+    var el = document.getElementById(id);
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      Array.prototype.forEach.call(el.children, function (c) { c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); });
+      opt[key] = num ? parseFloat(b.dataset.v) : b.dataset.v;
+      if (key === 'speed') phone.style.setProperty('--k', String(1 / opt.speed));
+      if (key === 'result') { reset(); renderSteps(); }
+    });
+  }
+  seg('seg-result', 'result', false); seg('seg-delay', 'delay', true); seg('seg-speed', 'speed', true);
+  renderSteps();
+})();
+</script>
