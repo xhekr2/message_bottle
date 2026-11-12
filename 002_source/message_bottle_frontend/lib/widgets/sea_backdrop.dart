@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
@@ -15,6 +16,7 @@ class SeaBackdrop extends StatelessWidget {
     this.overlay,
     this.header,
     this.rig,
+    this.shift,
   });
 
   final WaveClock clock;
@@ -31,45 +33,79 @@ class SeaBackdrop extends StatelessWidget {
   /// 파도 사이에 그릴 낚싯줄(공유 바다).
   final FishingRig? rig;
 
+  /// 이 화면이 옆으로 밀려 있는 만큼(논리 픽셀)을 되돌리는 값. 홈 화면에서 내 바다와 공유 바다를
+  /// 넘길 때, 바다(물빛·빛·별·파도)와 위쪽 표시를 그만큼 반대로 옮겨 화면에 고정된 것처럼 그린다.
+  /// 두 화면이 같은 시계로 같은 바다를 그리므로 넘기는 동안 바다가 끊기지 않고 버튼·유리병만 움직인다.
+  final ValueListenable<double>? shift;
+
+  /// [child]를 화면에 고정한다([shift]가 없으면 그대로 둔다).
+  Widget _pinned(Widget child) {
+    final s = shift;
+    if (s == null) return child;
+    return ValueListenableBuilder<double>(
+      valueListenable: s,
+      child: child,
+      builder: (context, dx, child) =>
+          Transform.translate(offset: Offset(dx, 0), child: child),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.seaTop, AppColors.seaMiddle, AppColors.seaBottom],
-          stops: [0, 0.45, 1],
-        ),
-      ),
+    // 고정해 그린 바다가 옆 화면 자리로 넘치지 않게 이 화면의 크기로 자른다.
+    return ClipRect(
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0.56, -0.76),
-                  radius: 0.8,
-                  colors: [
-                    AppColors.seaGlow,
-                    AppColors.seaGlow.withValues(alpha: 0),
-                  ],
+          Positioned.fill(
+            child: _pinned(
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppColors.seaTop,
+                      AppColors.seaMiddle,
+                      AppColors.seaBottom,
+                    ],
+                    stops: const [0, 0.45, 1],
+                  ),
                 ),
               ),
-              child: SizedBox.expand(),
+            ),
+          ),
+          Positioned.fill(
+            child: _pinned(
+              IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0.56, -0.76),
+                      radius: 0.8,
+                      colors: [
+                        AppColors.seaGlow,
+                        AppColors.seaGlow.withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
           // 밤바다에는 별과 달이 뜬다.
           if (AppColors.night)
-            const Positioned.fill(
-              child: IgnorePointer(child: NightSky(key: Key('night-sky'))),
+            Positioned.fill(
+              child: _pinned(
+                const IgnorePointer(child: NightSky(key: Key('night-sky'))),
+              ),
             ),
           Positioned.fill(child: content),
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: SeaWaves(clock: clock, rig: rig),
+            child: SeaWaves(clock: clock, rig: rig, shift: shift),
           ),
           if (overlay != null) Positioned.fill(child: overlay!),
           if (header != null)
@@ -77,10 +113,12 @@ class SeaBackdrop extends StatelessWidget {
               top: 0,
               left: 0,
               right: 0,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 14),
-                  child: Center(child: header),
+              child: _pinned(
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Center(child: header),
+                  ),
                 ),
               ),
             ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../api/api_exception.dart';
@@ -29,6 +30,8 @@ class SeaScreen extends StatefulWidget {
     required this.services,
     this.wakeSignal,
     this.header,
+    this.clock,
+    this.seaShift,
   });
 
   final AppServices services;
@@ -38,6 +41,12 @@ class SeaScreen extends StatefulWidget {
 
   /// 화면 위 가운데에 그리는 "내 바다 / 공유 바다" 표시(홈 화면이 준다). 서랍보다 아래에 그려진다.
   final Widget? header;
+
+  /// 홈 화면이 두 바다에 함께 주는 파도 시계. 없으면 이 화면이 자기 시계를 만든다.
+  final WaveClock? clock;
+
+  /// 이 화면이 옆으로 밀려 있는 만큼을 되돌리는 값(홈 화면이 준다). 바다를 화면에 고정해 그리는 데 쓴다.
+  final ValueListenable<double>? seaShift;
 
   @override
   State<SeaScreen> createState() => _SeaScreenState();
@@ -49,9 +58,9 @@ class _SeaScreenState extends State<SeaScreen>
     vsync: this,
     duration: const Duration(seconds: 6),
   )..repeat();
-  late final WaveClock _clock = WaveClock(
-    type: widget.services.settings.waveType,
-  )..attach(this);
+  late final WaveClock _clock =
+      widget.clock ??
+      (WaveClock(type: widget.services.settings.waveType)..attach(this));
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   SeaData? _sea;
   String? _error;
@@ -87,7 +96,7 @@ class _SeaScreenState extends State<SeaScreen>
     widget.wakeSignal?.removeListener(_wake);
     _idleTimer?.cancel();
     _anim.dispose();
-    _clock.dispose();
+    if (widget.clock == null) _clock.dispose(); // 홈 화면이 준 시계는 홈 화면이 정리한다
     super.dispose();
   }
 
@@ -390,6 +399,7 @@ class _SeaScreenState extends State<SeaScreen>
             ),
             body: SeaBackdrop(
               header: widget.header,
+              shift: widget.seaShift,
               clock: _clock,
               content: _content(),
               overlay: _hideable(

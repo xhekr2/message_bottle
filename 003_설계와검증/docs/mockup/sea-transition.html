@@ -1,0 +1,295 @@
+<title>바다 전환 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root {
+  --c-bg: #E9EEF3; --c-surface: #FFFFFF; --c-text: #12263A; --c-muted: #5A6B7B;
+  --c-line: #D6E3EE; --c-chip: #F4F8FB; --c-on: #0B5FA5; --c-on-text: #FFFFFF; --c-warn: #8A5A00; --c-warn-bg: #FFF4D6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-bg: #0E1822; --c-surface: #16232F; --c-text: #E6EEF5; --c-muted: #9FB1C1;
+    --c-line: #2B3C4A; --c-chip: #1E2E3B; --c-on: #5AA9E6; --c-on-text: #0E1822; --c-warn: #FFD98A; --c-warn-bg: #3A2E12;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --c-bg: #0E1822; --c-surface: #16232F; --c-text: #E6EEF5; --c-muted: #9FB1C1;
+  --c-line: #2B3C4A; --c-chip: #1E2E3B; --c-on: #5AA9E6; --c-on-text: #0E1822; --c-warn: #FFD98A; --c-warn-bg: #3A2E12;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--c-bg); color: var(--c-text);
+  font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  font-size: 15px; line-height: 1.55;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 940px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; text-wrap: balance; }
+.lede { margin: 0 0 24px; color: var(--c-muted); max-width: 62ch; }
+.stage { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.phone-slot { width: min(428px, 100%); flex: 0 0 auto; }
+.side { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.box { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: 14px; padding: 16px; }
+.box h2 { font-size: 13px; margin: 0 0 10px; color: var(--c-muted); font-weight: 600; letter-spacing: .02em; }
+.box p.hint { margin: 10px 0 0; font-size: 13px; color: var(--c-muted); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button, .act {
+  font: inherit; font-size: 14px; min-height: 40px; padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--c-line); background: var(--c-chip); color: var(--c-text); cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--c-on); border-color: var(--c-on); color: var(--c-on-text); font-weight: 700; }
+.go { display: flex; gap: 8px; flex-wrap: wrap; }
+.go .act { font-weight: 600; }
+button:focus-visible { outline: 3px solid #7DB8E8; outline-offset: 2px; }
+.check { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 14px; min-height: 40px; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--c-on); }
+.notes { margin: 0; padding-left: 18px; font-size: 14px; }
+.notes li + li { margin-top: 6px; }
+.notes small { color: var(--c-muted); font-size: 13px; }
+.desc { margin: 0; font-size: 14px; min-height: 4.6em; }
+.warn { background: var(--c-warn-bg); color: var(--c-warn); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 12px 0 0; }
+
+/* 휴대폰 화면: 색은 앱의 아침바다 색 그대로 */
+.phone { box-sizing: content-box; width: 412px; height: 780px; transform-origin: top left; position: relative; overflow: hidden; border-radius: 34px; border: 8px solid #1B2733; background: #7FBDE3; color: #12263A; box-shadow: 0 18px 44px rgba(18,38,58,.28); touch-action: pan-y; user-select: none; cursor: grab; }
+.phone.drag { cursor: grabbing; }
+.phone canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.layer { position: absolute; inset: 0; will-change: transform, opacity; }
+.tabs { position: absolute; top: 14px; left: 0; right: 0; display: flex; justify-content: center; z-index: 3; }
+.tab { padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 13px; color: #0E3150; opacity: .55; font-weight: 500; border: 0; background: none; font-family: inherit; cursor: pointer; }
+.tab i { width: 6px; height: 4px; border-radius: 2px; background: #0E3150; opacity: .6; }
+.tab.on { opacity: 1; font-weight: 700; } .tab.on i { width: 18px; }
+#tabsFixed .tab { opacity: 1; } #tabsFixed .tab i { transition: none; }
+.menu { position: absolute; left: 8px; top: 8px; width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.88); box-shadow: 0 2px 5px rgba(0,0,0,.2); display: grid; place-items: center; }
+.menu svg, .chip svg, .fab svg { width: 20px; height: 20px; flex: none; }
+.chips { position: absolute; right: 12px; top: 70px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.chip { min-height: 48px; padding: 6px 14px; display: flex; align-items: center; gap: 8px; border-radius: 24px; background: rgba(255,255,255,.88); box-shadow: 0 2px 5px rgba(0,0,0,.2); font-size: 14px; font-weight: 600; }
+.fab { position: absolute; right: 16px; bottom: 20px; min-height: 56px; padding: 8px 20px; border-radius: 28px; border: 3px solid #fff; background: #0B5FA5; color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 14px rgba(0,0,0,.3); }
+.bottle { position: absolute; width: 54px; height: 100px; animation: bob 4.5s ease-in-out infinite; }
+.bottle:nth-of-type(2) { animation-delay: -1.5s; } .bottle:nth-of-type(3) { animation-delay: -3s; }
+@keyframes bob { 50% { transform: translateY(-8px) rotate(2deg); } }
+.bottle svg { width: 100%; height: 100%; }
+.b-glass { fill: rgba(255,255,255,.55); stroke: #fff; stroke-width: 3; } .b-note { fill: #FFF6DD; stroke: #CDB98A; stroke-width: 1.5; } .b-cork { fill: #B98B58; }
+.hello { position: absolute; left: 32px; right: 32px; top: 250px; text-align: center; color: #0E3150; }
+.hello svg { width: 44px; height: 44px; } .hello b { display: block; font-size: 20px; margin-top: 4px; } .hello p { margin: 4px 0 0; font-size: 14px; line-height: 1.5; }
+.fish { position: absolute; left: 50%; bottom: 28px; width: 92px; height: 92px; margin-left: -46px; border-radius: 50%; border: 3px solid #fff; background: #0B5FA5; color: #fff; box-shadow: 0 6px 14px rgba(0,0,0,.3); font-size: 13px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.fish svg { width: 32px; height: 32px; }
+.swipehint { position: absolute; left: 0; right: 0; bottom: 150px; text-align: center; font-size: 12.5px; color: #fff; text-shadow: 0 1px 3px rgba(10,50,90,.6); pointer-events: none; z-index: 4; }
+@media (prefers-reduced-motion: reduce) { .bottle { animation: none; } }
+</style>
+
+<div class="wrap">
+  <h1>바다 전환 시안</h1>
+  <p class="lede">내 바다와 공유 바다를 오갈 때 바다가 끊겨 보이는 문제를, 바다는 그대로 두고 화면 위의 버튼과 유리병만 움직이는 방식으로 바꿔 본 시안입니다. 휴대폰 화면을 옆으로 끌거나 위쪽 표시를 눌러 보세요. 앱 코드는 바꾸지 않았습니다.</p>
+
+  <div class="stage">
+    <div class="phone-slot" id="slot">
+      <div class="phone" id="phone">
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+          <symbol id="bottle" viewBox="0 0 54 100">
+            <rect class="b-cork" x="19" y="2" width="16" height="11" rx="2"/>
+            <path class="b-glass" d="M20 12h14v14c9 5 14 12 14 22v38a10 10 0 01-10 10H16A10 10 0 016 86V48c0-10 5-17 14-22z"/>
+            <rect class="b-note" x="17" y="44" width="20" height="38" rx="4" transform="rotate(-6 27 63)"/>
+          </symbol>
+        </svg>
+        <canvas id="cv" aria-hidden="true"></canvas>
+
+        <!-- 내 바다의 UI -->
+        <div class="layer" id="l0">
+          <div class="tabs inlayer"><span class="tab on">내 바다<i></i></span><span class="tab">공유 바다<i></i></span></div>
+          <div class="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div>
+          <div class="chips">
+            <div class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4l18 8-18 8 3-8z"/></svg>보낸 편지함</div>
+            <div class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 14h4l1 2h6l1-2h4"/></svg>받은 편지함</div>
+          </div>
+          <div class="bottles" id="bottles">
+            <div class="bottle" style="left:62px;top:214px"><svg><use href="#bottle"/></svg></div>
+            <div class="bottle" style="left:266px;top:282px"><svg><use href="#bottle"/></svg></div>
+            <div class="bottle" style="left:140px;top:410px"><svg><use href="#bottle"/></svg></div>
+          </div>
+          <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>편지 쓰기</div>
+        </div>
+
+        <!-- 공유 바다의 UI -->
+        <div class="layer" id="l1">
+          <div class="tabs inlayer"><span class="tab">내 바다<i></i></span><span class="tab on">공유 바다<i></i></span></div>
+          <div class="chips"><div class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>편지 띄우기</div></div>
+          <div class="hello">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+            <b>공유 바다</b><p>모두가 함께 쓰는 바다예요.<br>누군가 띄운 유리병을 낚아 보세요.</p>
+          </div>
+          <div class="fish"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 3v11a5 5 0 01-10 0v-2l3 2.5"/><circle cx="15" cy="3.5" r="1.2" fill="currentColor"/></svg>유리병 낚기</div>
+        </div>
+
+        <!-- 바다 고정 방식에서는 위쪽 표시도 제자리에 둔다 -->
+        <div class="tabs" id="tabsFixed">
+          <button class="tab" data-to="0">내 바다<i></i></button><button class="tab" data-to="1">공유 바다<i></i></button>
+        </div>
+        <div class="swipehint" id="hint">← 옆으로 끌어 보세요 →</div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="box">
+        <h2>전환 방식</h2>
+        <div class="seg" id="modeSeg">
+          <button data-mode="now" aria-pressed="false">지금 (화면째 이동)</button>
+          <button data-mode="slide" aria-pressed="true">바다 고정 + UI 밀기</button>
+          <button data-mode="fade" aria-pressed="false">바다 고정 + UI 바꿔치기</button>
+        </div>
+        <label class="check" id="parallaxRow"><input type="checkbox" id="parallax"> 파도가 살짝 따라 흐르게 (옆으로 이동하는 느낌)</label>
+        <p class="desc" id="desc"></p>
+      </div>
+      <div class="box">
+        <h2>움직여 보기</h2>
+        <div class="go">
+          <button class="act" data-to="0">내 바다로</button>
+          <button class="act" data-to="1">공유 바다로</button>
+          <button class="act" id="auto" aria-pressed="false">계속 오가기</button>
+        </div>
+        <h2 style="margin-top:16px">속도</h2>
+        <div class="seg" id="speedSeg">
+          <button data-k="1" aria-pressed="true">보통</button>
+          <button data-k="4" aria-pressed="false">느리게 (이음매 보기)</button>
+        </div>
+        <p class="hint">"지금" 방식에서 느리게 오가면 두 바다 사이의 이음매(파도와 빛이 어긋나는 선)가 보입니다.</p>
+      </div>
+      <div class="box">
+        <h2>앱에 넣을 때 정할 것</h2>
+        <ul class="notes">
+          <li><b>유리병</b>: 밀기 방식에서는 유리병도 옆으로 밀려 나갑니다. 바꿔치기 방식에서는 살짝 가라앉으며 사라집니다.</li>
+          <li><b>위쪽 "내 바다 / 공유 바다" 표시</b>: 두 방식 모두 제자리에 두고 아래 줄 표시만 옮깁니다.</li>
+          <li><b>낚시 움직임·버리기 물결</b>: 파도 사이에 그리는 효과라서 하나로 합친 바다에 다시 연결해야 합니다. <small>가장 손이 많이 가는 부분입니다.</small></li>
+          <li><b>밤바다</b>: 달과 별도 하나만 그리므로 이음매가 함께 사라집니다.</li>
+        </ul>
+        <p class="warn">이 시안은 움직임을 보는 용도입니다. 파도 모양과 속도는 앱과 비슷하게 흉내 낸 것이고 똑같지는 않습니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var W = 412, H = 780;
+  var phone = document.getElementById('phone'), slot = document.getElementById('slot');
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var l0 = document.getElementById('l0'), l1 = document.getElementById('l1');
+  var tabsFixed = document.getElementById('tabsFixed'), bottles = document.getElementById('bottles');
+  var st = { p: 0, mode: 'slide', parallax: false, k: 1, anim: null, auto: false, scale: 1 };
+  var DESC = {
+    now: '<b>지금 앱의 방식.</b> 두 화면이 각자 바다를 그리고 화면 전체가 옆으로 밀립니다. 두 바다의 파도가 따로 움직여서 경계에서 파도와 빛이 어긋나 보입니다.',
+    slide: '<b>바다는 한 장만 그리고 제자리에 둡니다.</b> 버튼, 안내, 유리병만 옆으로 밀려 나가고 들어옵니다. 파도가 끊기지 않고, 옆으로 넘기는 손맛은 그대로입니다.',
+    fade: '<b>바다는 제자리, UI는 그 자리에서 바뀝니다.</b> 내 바다의 버튼과 유리병이 흐려지며 살짝 가라앉고, 공유 바다의 버튼이 떠오릅니다. 가장 차분하지만 "옆으로 이동했다"는 느낌은 약합니다.'
+  };
+  function $$(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }
+  function press(sel, test) { $$(sel).forEach(function (b) { b.setAttribute('aria-pressed', test(b) ? 'true' : 'false'); }); }
+
+  function fit() {
+    st.scale = Math.min(1, slot.clientWidth / 428);
+    phone.style.transform = 'scale(' + st.scale + ')'; slot.style.height = (796 * st.scale) + 'px';
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', fit); fit();
+
+  /* ----- 바다 그리기 ----- */
+  var LAYERS = [
+    { c: 'rgba(96,170,215,.42)', base: 612, a: 9, k: 0.016, w: 0.7, ph: 0.0 },
+    { c: 'rgba(52,134,158,.52)', base: 642, a: 11, k: 0.013, w: 0.85, ph: 2.1 },
+    { c: 'rgba(27,100,155,.62)', base: 676, a: 12, k: 0.011, w: 1.0, ph: 4.3 },
+    { c: 'rgba(20,82,130,.80)', base: 710, a: 10, k: 0.014, w: 1.15, ph: 1.2 }
+  ];
+  function sea(ox, t, shift) {
+    ctx.save(); ctx.beginPath(); ctx.rect(ox, 0, W, H); ctx.clip();
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#CBE9F7'); g.addColorStop(0.45, '#7FBDE3'); g.addColorStop(1, '#2F7FB8');
+    ctx.fillStyle = g; ctx.fillRect(ox, 0, W, H);
+    var r = ctx.createRadialGradient(ox + W * 0.78, H * 0.12, 0, ox + W * 0.78, H * 0.12, W * 0.9);
+    r.addColorStop(0, 'rgba(255,255,255,.75)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = r; ctx.fillRect(ox, 0, W, H);
+    LAYERS.forEach(function (L) {
+      ctx.beginPath(); ctx.moveTo(ox, H);
+      for (var x = 0; x <= W; x += 6) {
+        var xx = x + shift;
+        var y = L.base + L.a * Math.sin(L.k * xx - L.w * t + L.ph) + L.a * 0.45 * Math.sin(L.k * 2.3 * xx - L.w * 1.7 * t + L.ph * 2);
+        ctx.lineTo(ox + x, y);
+      }
+      ctx.lineTo(ox + W, H); ctx.closePath(); ctx.fillStyle = L.c; ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  /* ----- 진행도 p(0=내 바다, 1=공유 바다)에 따라 화면을 놓는다 ----- */
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function place() {
+    var p = st.p, fixed = st.mode !== 'now';
+    tabsFixed.hidden = !fixed;
+    $$('.tabs.inlayer').forEach(function (el) { el.hidden = fixed; });
+    if (st.mode === 'fade') {
+      var a0 = clamp(1 - p * 1.8, 0, 1), a1 = clamp((p - 0.45) * 1.8, 0, 1);
+      l0.style.opacity = a0; l0.style.transform = 'translateX(' + (-p * 28) + 'px)';
+      l1.style.opacity = a1; l1.style.transform = 'translateX(' + ((1 - p) * 28) + 'px)';
+      bottles.style.transform = 'translateY(' + (p * 46) + 'px)';
+    } else {
+      l0.style.opacity = 1; l1.style.opacity = 1; bottles.style.transform = '';
+      l0.style.transform = 'translateX(' + (-p * W) + 'px)';
+      l1.style.transform = 'translateX(' + ((1 - p) * W) + 'px)';
+    }
+    l0.style.pointerEvents = p < 0.5 ? 'auto' : 'none'; l1.style.pointerEvents = p >= 0.5 ? 'auto' : 'none';
+    var tabs = tabsFixed.querySelectorAll('.tab');
+    [1 - p, p].forEach(function (v, i) {
+      tabs[i].style.opacity = 0.55 + 0.45 * v; tabs[i].style.fontWeight = v > 0.5 ? 700 : 500;
+      tabs[i].querySelector('i').style.width = (6 + 12 * v) + 'px';
+    });
+  }
+
+  function frame(ms) {
+    var t = ms / 1000;
+    if (st.anim) {
+      var u = clamp((ms - st.anim.t0) / st.anim.d, 0, 1), e = 1 - Math.pow(1 - u, 3);
+      st.p = st.anim.from + (st.anim.to - st.anim.from) * e;
+      if (u >= 1) { var done = st.anim.to; st.anim = null; if (st.auto) setTimeout(function () { if (st.auto) go(done > 0.5 ? 0 : 1); }, 500 * st.k); }
+    }
+    ctx.clearRect(0, 0, W, H);
+    if (st.mode === 'now') {
+      // 두 화면이 각자 바다를 그린다: 파도의 박자가 서로 다르다.
+      sea(-st.p * W, t, 0);
+      sea((1 - st.p) * W, t * 1.07 + 7.3, 190);
+    } else {
+      sea(0, t, st.parallax ? st.p * 90 : 0);
+    }
+    place();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  function go(to) { st.anim = { from: st.p, to: to, t0: performance.now(), d: 320 * st.k * Math.max(0.35, Math.abs(to - st.p)) }; document.getElementById('hint').hidden = true; }
+
+  /* ----- 끌기 ----- */
+  var drag = null;
+  phone.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('#tabsFixed .tab')) return;
+    drag = { x: e.clientX, p: st.p, moved: false }; st.anim = null; phone.setPointerCapture(e.pointerId);
+  });
+  phone.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var dx = (e.clientX - drag.x) / st.scale;
+    if (Math.abs(dx) > 4) { drag.moved = true; phone.classList.add('drag'); }
+    st.p = clamp(drag.p - dx / W, 0, 1);
+  });
+  function end() { if (!drag) return; var moved = drag.moved; drag = null; phone.classList.remove('drag'); if (moved) go(st.p > 0.5 ? 1 : 0); }
+  phone.addEventListener('pointerup', end); phone.addEventListener('pointercancel', end);
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-to]'); if (b) { st.auto = false; press('#auto', function () { return false; }); go(+b.dataset.to); return; }
+    b = e.target.closest('#modeSeg button'); if (b) { st.mode = b.dataset.mode; press('#modeSeg button', function (x) { return x === b; }); document.getElementById('desc').innerHTML = DESC[st.mode]; document.getElementById('parallaxRow').style.visibility = st.mode === 'now' ? 'hidden' : 'visible'; return; }
+    b = e.target.closest('#speedSeg button'); if (b) { st.k = +b.dataset.k; press('#speedSeg button', function (x) { return x === b; }); return; }
+    if (e.target.closest('#auto')) { st.auto = !st.auto; press('#auto', function () { return st.auto; }); if (st.auto) go(st.p > 0.5 ? 0 : 1); }
+  });
+  document.getElementById('parallax').addEventListener('change', function (e) { st.parallax = e.target.checked; });
+  document.getElementById('desc').innerHTML = DESC[st.mode];
+})();
+</script>

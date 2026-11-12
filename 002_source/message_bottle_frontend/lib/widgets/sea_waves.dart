@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
@@ -180,11 +181,15 @@ class WaveClock extends ChangeNotifier {
 
 /// 화면 아래쪽에서 오른쪽으로 흘러가는 파도 네 겹.
 class SeaWaves extends StatelessWidget {
-  const SeaWaves({super.key, required this.clock, this.rig});
+  const SeaWaves({super.key, required this.clock, this.rig, this.shift});
   final WaveClock clock;
 
   /// 파도 겹 사이에 함께 그릴 낚싯줄(공유 바다).
   final FishingRig? rig;
+
+  /// 파도를 옆으로 옮겨 그리는 값. 홈 화면에서 화면이 밀리는 만큼을 되돌려 파도를 화면에 고정한다
+  /// ([SeaBackdrop.shift]). 낚싯줄은 화면의 UI와 함께 움직이도록 옮기지 않는다.
+  final ValueListenable<double>? shift;
 
   static const height = 230.0;
 
@@ -194,23 +199,37 @@ class SeaWaves extends StatelessWidget {
       child: SizedBox(
         height: height,
         width: double.infinity,
-        child: CustomPaint(painter: _WavePainter(clock, rig)),
+        child: CustomPaint(painter: _WavePainter(clock, rig, shift)),
       ),
     );
   }
 }
 
 class _WavePainter extends CustomPainter {
-  _WavePainter(this.clock, this.rig)
-    : super(repaint: rig == null ? clock : Listenable.merge([clock, rig]));
+  _WavePainter(this.clock, this.rig, this.shift)
+    : super(repaint: Listenable.merge([clock, rig, shift]));
   final WaveClock clock;
   final FishingRig? rig;
+  final ValueListenable<double>? shift;
 
   @override
   void paint(Canvas canvas, Size size) {
+    final dx = shift?.value ?? 0;
+    // 파도는 dx만큼 옮겨 화면에 고정하고, 낚싯줄은 이 화면의 자리에 그대로 그린다.
+    void withRig(void Function(FishingRig rig) draw) {
+      final r = rig;
+      if (r == null) return;
+      canvas.save();
+      canvas.translate(-dx, 0);
+      draw(r);
+      canvas.restore();
+    }
+
+    canvas.save();
+    canvas.translate(dx, 0);
     for (var l = 0; l < WaveField.layerCount; l++) {
       // 낚싯줄은 뒤쪽 두 겹과 앞쪽 두 겹 사이에 그려서 물에 잠긴 부분이 가려진다.
-      if (l == 2) rig?.paintLine(canvas, size);
+      if (l == 2) withRig((r) => r.paintLine(canvas, size));
       final pts = WaveField.points(
         width: size.width,
         height: size.height,
@@ -242,12 +261,15 @@ class _WavePainter extends CustomPainter {
             ),
         );
       }
-      if (l == 2) rig?.paintRings(canvas, size);
+      if (l == 2) withRig((r) => r.paintRings(canvas, size));
     }
-    rig?.paintDrops(canvas, size);
+    withRig((r) => r.paintDrops(canvas, size));
+    canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant _WavePainter oldDelegate) =>
-      oldDelegate.clock != clock || oldDelegate.rig != rig;
+      oldDelegate.clock != clock ||
+      oldDelegate.rig != rig ||
+      oldDelegate.shift != shift;
 }

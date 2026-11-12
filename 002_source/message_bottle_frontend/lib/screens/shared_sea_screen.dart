@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../api/api_exception.dart';
@@ -17,12 +18,24 @@ import 'shared_write_sheet.dart';
 /// 모든 사용자가 함께 쓰는 공유 바다. 유리병이 떠다니지 않고, 아래 가운데 "유리병 낚기" 버튼으로
 /// 바다에 남아 있는 편지 중 하나를 무작위로 낚는다. 우상단에서 익명으로 편지를 띄울 수 있다.
 class SharedSeaScreen extends StatefulWidget {
-  const SharedSeaScreen({super.key, required this.services, this.header});
+  const SharedSeaScreen({
+    super.key,
+    required this.services,
+    this.header,
+    this.clock,
+    this.seaShift,
+  });
 
   final AppServices services;
 
   /// 화면 위 가운데에 그리는 "내 바다 / 공유 바다" 표시(홈 화면이 준다). 서랍이 없지만 같은 위치를 쓴다.
   final Widget? header;
+
+  /// 홈 화면이 두 바다에 함께 주는 파도 시계. 없으면 이 화면이 자기 시계를 만든다.
+  final WaveClock? clock;
+
+  /// 이 화면이 옆으로 밀려 있는 만큼을 되돌리는 값(홈 화면이 준다). 바다를 화면에 고정해 그리는 데 쓴다.
+  final ValueListenable<double>? seaShift;
 
   @override
   State<SharedSeaScreen> createState() => _SharedSeaScreenState();
@@ -30,9 +43,9 @@ class SharedSeaScreen extends StatefulWidget {
 
 class _SharedSeaScreenState extends State<SharedSeaScreen>
     with TickerProviderStateMixin {
-  late final WaveClock _clock = WaveClock(
-    type: widget.services.settings.waveType,
-  )..attach(this);
+  late final WaveClock _clock =
+      widget.clock ??
+      (WaveClock(type: widget.services.settings.waveType)..attach(this));
   late final FishingRig _rig = FishingRig(_clock)..attach(this);
   bool _fishing = false;
 
@@ -54,7 +67,7 @@ class _SharedSeaScreenState extends State<SharedSeaScreen>
     final tap = _bottleTap;
     if (tap != null && !tap.isCompleted) tap.complete();
     _rig.dispose();
-    _clock.dispose();
+    if (widget.clock == null) _clock.dispose(); // 홈 화면이 준 시계는 홈 화면이 정리한다
     super.dispose();
   }
 
@@ -236,6 +249,7 @@ class _SharedSeaScreenState extends State<SharedSeaScreen>
       header: widget.header == null
           ? null
           : _hiddenWhileFishing(widget.header!),
+      shift: widget.seaShift,
       clock: _clock,
       rig: _rig,
       content: AnimatedOpacity(
