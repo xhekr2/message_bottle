@@ -1,0 +1,95 @@
+## auth
+OK | 409 (expect 409) | POST /api/auth/signup | duplicate username
+OK | 400 (expect 400) | POST /api/auth/signup | invalid username/password
+OK | 401 (expect 401) | POST /api/auth/login | wrong password
+OK | 401 (expect 401) | POST /api/auth/login | username case differs
+OK | 200 (expect 200) | POST /api/auth/login | login
+OK | 200 (expect 200) | POST /api/auth/refresh | refresh
+OK | 401 (expect 401) | POST /api/auth/refresh | old refresh token reused
+OK | 401 (expect 401) | GET /api/sea/me | no token
+OK | 401 (expect 401) | GET /api/sea/me | garbage token
+## users / sea
+OK | 200 (expect 200) | GET /api/users/search?username=ichk | search
+OK | 200 (expect 200) | GET /api/sea/me | my sea
+OK | 200 (expect 200) | GET /api/sea/me/letters | my sea letters
+OK | 200 (expect 200) | PATCH /api/users/me/sea-visibility | B private
+OK | 403 (expect 403) | GET /api/sea/users/ichk02 | visit private sea
+OK | 200 (expect 200) | GET /api/sea/users/ichk02 | owner sees own private sea
+OK | 200 (expect 200) | PATCH /api/users/me/sea-visibility | B public
+OK | 200 (expect 200) | GET /api/sea/users/ichk02 | visit public sea
+   body: {"username":"ichk02","floatingCount":0}
+OK | 404 (expect 404) | GET /api/sea/users/nouser99999 | visit unknown user
+OK | 400 (expect 400) | PATCH /api/users/me/sea-visibility | bad visibility
+OK | 200 (expect 200) | PATCH /api/users/me/sea-visibility | B back to private
+## settings
+OK | 200 (expect 200) | GET /api/users/me/settings | get settings
+OK | 200 (expect 200) | PUT /api/users/me/settings | change settings
+OK | 400 (expect 400) | PUT /api/users/me/settings | out of range
+OK | 200 (expect 200) | PUT /api/users/me/settings | restore settings
+OK | 401 (expect 401) | GET /api/users/me/settings | settings without token
+## letters: send, open, reply, parent, archive, inbox, sent
+OK | 400 (expect 400) | POST /api/letters | send to myself
+OK | 400 (expect 400) | POST /api/letters | blank content
+OK | 404 (expect 404) | POST /api/letters | unknown receiver
+OK | 201 (expect 201) | POST /api/letters | A sends to B
+OK | 200 (expect 200) | GET /api/sent/29 | A reads own sent letter
+OK | 404 (expect 404) | GET /api/sent/29 | B cannot read A's sent record
+OK | 404 (expect 404) | POST /api/letters/29/archive | sender cannot archive
+OK | 200 (expect 200) | GET /api/letters/29 | B opens letter
+OK | 201 (expect 201) | POST /api/letters/29/replies | B replies (original auto-archived)
+OK | 404 (expect 404) | POST /api/letters/29/replies | reply again to archived letter
+OK | 200 (expect 200) | GET /api/inbox | B inbox
+   replied flag for letter 29: true
+OK | 200 (expect 200) | GET /api/inbox/13 | B inbox detail
+OK | 404 (expect 404) | GET /api/inbox/13 | A cannot read B's archive
+OK | 200 (expect 200) | GET /api/letters/30 | A opens the reply
+   parentLetterId in reply: 29
+OK | 200 (expect 200) | GET /api/letters/30/parent | A goes back to parent letter
+XX | 201 (expect 200) | POST /api/letters/30/archive | A archives the reply
+{"archiveId":14}
+OK | 409 (expect 409) | POST /api/letters/30/archive | archive twice
+OK | 200 (expect 200) | GET /api/sent | A sent list
+OK | 405 (expect 405) | DELETE /api/sent/29 | delete sent letter
+OK | 204 (expect 204) | DELETE /api/inbox/13 | B deletes archive
+OK | 404 (expect 404) | GET /api/inbox/13 | deleted archive is gone
+OK | 200 (expect 200) | GET /api/sent/29 | A's sent record survives
+## letters: discard, anonymous
+OK | 201 (expect 201) | POST /api/letters | A sends
+OK | 200 (expect 200) | GET /api/letters/31 | B opens
+OK | 204 (expect 204) | POST /api/letters/31/discard | B discards
+OK | 404 (expect 404) | POST /api/letters/31/discard | discard twice
+OK | 404 (expect 404) | GET /api/letters/31 | discarded letter is gone
+OK | 201 (expect 201) | POST /api/letters | A sends anonymously
+OK | 200 (expect 200) | GET /api/letters/32 | B opens anonymous letter
+   body: {"id":32,"role":"RECEIVER","counterpartUsername":null,"anonymous":true,"content":"sweep anonymous letter","sentAt":"2026-11-12T09:29:06.870256","canReply":false,"canArchive":true,"parentLetterId":null}
+OK | no sender name in anonymous letter body
+XX | 400 (expect 403) | POST /api/letters/32/replies | reply to anonymous letter
+{"message":"익명 편지에는 답장할 수 없습니다."}
+XX | 201 (expect 200) | POST /api/letters/32/archive | B archives anonymous letter
+{"archiveId":15}
+## shared sea
+OK | 400 (expect 400) | POST /api/shared-sea/letters | blank shared letter
+OK | 201 (expect 201) | POST /api/shared-sea/letters | A floats a letter
+   created body: {"id":2}
+OK | 200 | POST /api/shared-sea/fish | B fished A's letter after 2 tries: {"id":2,"content":"sweep shared letter from A","sentAt":"2026-11-12T09:29:07.523778"}
+OK | no author name in fished letter
+OK | 201 (expect 201) | POST /api/shared-sea/letters/2/replies | B replies to shared letter
+   reply body: {"id":33}
+OK | no author name in reply response
+OK | 404 (expect 404) | POST /api/shared-sea/letters/2/replies | reply twice to shared letter
+OK | 200 (expect 200) | GET /api/letters/33 | A opens the reply to the shared letter
+   body: {"id":33,"role":"RECEIVER","counterpartUsername":"ichk02","anonymous":false,"content":"sweep reply to shared letter","sentAt":"2026-11-12T09:29:07.986207","canReply":true,"canArchive":true,"parentLetterId":2}
+OK | 200 (expect 200) | GET /api/letters/33/parent | A goes back to own shared letter
+XX | 201 (expect 200) | POST /api/letters/33/archive | A archives it
+{"archiveId":16}
+OK | 200 (expect 200) | GET /api/sent/33 | B's sent record of the shared reply
+   body: {"id":33,"receiverUsername":null,"anonymous":false,"content":"sweep reply to shared letter","sentAt":"2026-11-12T09:29:07.986207","parentLetterId":null}
+OK | no author name in B's sent record
+## logout
+OK | 204 (expect 204) | POST /api/auth/logout | logout
+OK | 401 (expect 401) | POST /api/auth/refresh | refresh after logout
+## docs
+OK | 200 (expect 200) | GET /v3/api-docs | OpenAPI json
+OK | 200 (expect 200) | GET /swagger-ui/index.html | Swagger UI
+
+RESULT pass=69 fail=4  ids: L1=29 L2=30 L3=31 L4=32 L5=33 shared=2
