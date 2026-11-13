@@ -38,12 +38,13 @@ curl -i http://localhost:8080/api/sea/me
 ## 앱 실행
 프로젝트 폴더: `message_bottle_frontend`
 기기 선택 방법: `flutter devices`로 목록을 보고 `-d <기기 id>`로 고른다.
-기기에서 접근할 API 주소: 기본값은 `http://10.0.2.2:8080`(Android 에뮬레이터에서 본 서버 PC)이다. 실제 휴대폰이나 다른 기기에서는 서버 PC의 LAN IP를 `API_BASE_URL`로 준다(`lib/config.dart`).
+기기에서 접근할 API 주소: 기본값은 Android에서 `http://10.0.2.2:8080`(에뮬레이터에서 본 서버 PC), iOS에서 `http://localhost:8080`(시뮬레이터에서 본 Mac)이다. 실제 휴대폰이나 다른 기기에서는 서버 PC의 LAN IP를 `API_BASE_URL`로 준다(`lib/config.dart`).
 실행 명령:
 ```bash
 flutter run --dart-define=API_BASE_URL=http://<서버 PC의 IP>:8080
 ```
 에뮬레이터에서 기본 주소를 쓸 때는 `flutter run`만으로 된다. 설치 파일을 만들 때는 `flutter build apk --debug`를 쓴다.
+iOS는 Xcode가 설치된 Mac에서만 빌드할 수 있다. 시뮬레이터는 `flutter run -d <시뮬레이터 id>`, 실제 iPhone은 Xcode에서 `ios/Runner.xcworkspace`를 열어 서명 팀(Signing & Capabilities)을 고른 뒤 실행한다. iOS 빌드와 실행은 이 프로젝트에서 실제로 해 보지 못했다(Windows에서 작업).
 예제 계정 준비 방법: 미리 넣어 둔 계정은 없다. 앱의 회원가입 화면에서 아이디(영문·숫자 4~20자)와 비밀번호(8~20자)로 직접 만든다. 편지를 주고받으려면 계정이 두 개 필요하다.
 
 실제 비밀번호·토큰·서명 키는 이 문서에 넣지 않는다. 별도로 제공해야 하는 값은 전달 방법만 적는다. DB 계정과 `JWT_SECRET`은 실행하는 사람이 자기 PC의 환경 변수로 정한다.

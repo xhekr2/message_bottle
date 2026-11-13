@@ -60,6 +60,10 @@ public class Letter {
     @Column(name = "opened_at")
     private LocalDateTime openedAt;
 
+    /** 바다에서의 자리(0~10). 떠오르기 전에는 null이고, 내 바다를 불러올 때 정해진다. */
+    @Column(name = "sea_slot")
+    private Integer seaSlot;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -81,6 +85,11 @@ public class Letter {
                   LetterStatus status, LocalDateTime sentAt) {
         this(sender, receiver, (Letter) null, content, false, status, sentAt);
         this.sharedParent = sharedParent;
+    }
+
+    /** 바다에서의 자리(0~10). 떠 있는 동안에만 뜻이 있다. */
+    public void placeAt(int slot) {
+        this.seaSlot = slot;
     }
 
     public void changeStatus(LetterStatus status) {

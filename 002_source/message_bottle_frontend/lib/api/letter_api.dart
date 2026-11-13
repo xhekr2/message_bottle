@@ -11,6 +11,18 @@ class LetterApi {
     await _client.get('/api/sea/me') as Map<String, dynamic>,
   );
 
+  /// 내 바다의 유리병 자리(편지 id → 자리)를 서버에 저장한다. 다른 기기나 방문자도 같은 자리를 본다.
+  Future<void> saveSeaSlots(Map<int, int> slots) async {
+    await _client.put(
+      '/api/sea/me/slots',
+      body: {
+        'slots': [
+          for (final e in slots.entries) {'letterId': e.key, 'slot': e.value},
+        ],
+      },
+    );
+  }
+
   /// 내 바다를 공개(true)/비공개(false)로 바꾼다. 서버가 확인한 값을 돌려준다.
   Future<bool> setSeaPublic(bool isPublic) async {
     final res = await _client.patch(

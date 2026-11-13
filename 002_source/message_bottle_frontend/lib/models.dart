@@ -10,12 +10,18 @@ String formatDate(DateTime? d, {DateTime? now}) {
 }
 
 class Bottle {
-  const Bottle({required this.id, this.sentAt});
+  const Bottle({required this.id, this.sentAt, this.slot});
   final int id;
   final DateTime? sentAt;
 
-  factory Bottle.fromJson(Map<String, dynamic> j) =>
-      Bottle(id: j['id'] as int, sentAt: _date(j['sentAt']));
+  /// 서버에 저장된 바다의 자리(0~10).
+  final int? slot;
+
+  factory Bottle.fromJson(Map<String, dynamic> j) => Bottle(
+    id: j['id'] as int,
+    sentAt: _date(j['sentAt']),
+    slot: j['slot'] as int?,
+  );
 }
 
 class SeaData {
@@ -49,15 +55,25 @@ class SeaData {
   );
 }
 
-/// 다른 사람의 공개 바다. 서버는 아이디와 떠 있는 유리병 개수만 준다.
+/// 다른 사람의 공개 바다. 서버는 아이디, 떠 있는 유리병 개수, 유리병이 놓인 자리만 준다.
 class PublicSea {
-  const PublicSea({required this.username, required this.floatingCount});
+  const PublicSea({
+    required this.username,
+    required this.floatingCount,
+    required this.slots,
+  });
   final String username;
   final int floatingCount;
+
+  /// 유리병이 놓인 자리 번호들. 주인이 자기 바다에서 보는 자리와 같다.
+  final List<int> slots;
 
   factory PublicSea.fromJson(Map<String, dynamic> j) => PublicSea(
     username: j['username'] as String,
     floatingCount: j['floatingCount'] as int,
+    slots:
+        (j['slots'] as List?)?.cast<int>() ??
+        List<int>.generate(j['floatingCount'] as int, (i) => i),
   );
 }
 

@@ -2,9 +2,13 @@ package com.example.message_bottle_backend.letter;
 
 import com.example.message_bottle_backend.letter.dto.BottleResponse;
 import com.example.message_bottle_backend.letter.dto.SeaResponse;
+import com.example.message_bottle_backend.letter.dto.SeaSlotsRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,6 +25,12 @@ public class SeaController {
     @GetMapping
     public SeaResponse me(@AuthenticationPrincipal Long userId) {
         return seaService.load(userId);
+    }
+
+    /** 유리병 자리 저장. 저장된 뒤의 내 유리병 목록을 돌려준다. */
+    @PutMapping("/slots")
+    public List<BottleResponse> saveSlots(@AuthenticationPrincipal Long userId, @Valid @RequestBody SeaSlotsRequest request) {
+        return seaService.saveSlots(userId, request);
     }
 
     @GetMapping("/letters")

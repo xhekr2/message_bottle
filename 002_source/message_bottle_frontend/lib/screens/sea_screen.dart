@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import '../models.dart';
 import '../theme.dart';
 import '../widgets/bottle_field.dart';
 import '../widgets/common.dart';
+import '../widgets/fish_nudge.dart';
 import '../widgets/sea_backdrop.dart';
 import '../widgets/sea_drawer.dart';
 import '../widgets/skeleton.dart';
@@ -32,6 +34,7 @@ class SeaScreen extends StatefulWidget {
     this.header,
     this.clock,
     this.seaShift,
+    this.random,
   });
 
   final AppServices services;
@@ -47,6 +50,9 @@ class SeaScreen extends StatefulWidget {
 
   /// 이 화면이 옆으로 밀려 있는 만큼을 되돌리는 값(홈 화면이 준다). 바다를 화면에 고정해 그리는 데 쓴다.
   final ValueListenable<double>? seaShift;
+
+  /// 물고기가 나타나는 때와 건드릴 유리병을 정하는 난수(테스트에서 고정한다).
+  final math.Random? random;
 
   @override
   State<SeaScreen> createState() => _SeaScreenState();
@@ -69,7 +75,7 @@ class _SeaScreenState extends State<SeaScreen>
   bool _openingMail = false; // 편지함의 편지를 불러오는 중
   bool _detailOpen = false;
 
-  /// 편지 id → 바다의 자리. 한 번 정한 자리는 그 병이 있는 동안 바뀌지 않는다.
+  /// 편지 id → 바다의 자리(0~10). 서버에 저장된 자리이고, 물고기가 밀 때만 바뀐다.
   Map<int, int> _slots = {};
 
   /// 버려서 사라지는 중인 자리들.
@@ -77,6 +83,24 @@ class _SeaScreenState extends State<SeaScreen>
 
   Timer? _idleTimer;
   bool _idle = false;
+
+  /* 물고기: 가끔 지나가며 유리병 하나를 밀어 다른 자리로 보낸다. */
+  late final math.Random _random = widget.random ?? math.Random();
+  late final AnimationController _fish = AnimationController(
+    vsync: this,
+    duration: FishRun.duration,
+  );
+  FishRun? _fishRun;
+  bool _fishHit = false;
+  Timer? _fishTimer;
+
+  /// 밀려난 유리병이 차례로 움직이기를 기다리는 타이머들.
+  final List<Timer> _chainTimers = [];
+  bool _savingSlots = false;
+
+  /// 편지 id → 밀린 횟수, 기울 방향.
+  final Map<int, int> _nudges = {};
+  final Map<int, double> _leans = {};
 
   @override
   void initState() {
@@ -86,6 +110,9 @@ class _SeaScreenState extends State<SeaScreen>
     widget.wakeSignal?.addListener(_wake);
     widget.services.settings.load();
     _restartIdle();
+    _fish.addListener(_onFishTick);
+    _fish.addStatusListener(_onFishStatus);
+    _scheduleFish();
     _load();
   }
 
@@ -95,6 +122,11 @@ class _SeaScreenState extends State<SeaScreen>
     widget.services.settings.removeListener(_onSettings);
     widget.wakeSignal?.removeListener(_wake);
     _idleTimer?.cancel();
+    _fishTimer?.cancel();
+    for (final t in _chainTimers) {
+      t.cancel();
+    }
+    _fish.dispose();
     _anim.dispose();
     if (widget.clock == null) _clock.dispose(); // 홈 화면이 준 시계는 홈 화면이 정리한다
     super.dispose();
@@ -166,11 +198,7 @@ class _SeaScreenState extends State<SeaScreen>
       if (!mounted) return;
       setState(() {
         _sea = sea;
-        _slots = assignSlots(
-          _slots,
-          sea.letters.take(10).map((b) => b.id).toList(),
-          reserved: _vanishing.toSet(),
-        );
+        _slots = _slotsFor(sea.letters.take(10).toList());
         _loading = false;
         _error = null;
       });
@@ -181,6 +209,152 @@ class _SeaScreenState extends State<SeaScreen>
         _loading = false;
         _error = e.message;
       });
+    }
+  }
+
+  /// 유리병의 자리를 정한다. 서버가 준 자리를 그대로 쓰고, 물고기가 밀어 옮기는 중이거나
+  /// 저장하는 중인 유리병은 화면의 자리를 지킨다. 서버가 자리를 주지 않은 유리병만 빈 앞자리에 놓는다.
+  Map<int, int> _slotsFor(List<Bottle> letters) {
+    final keepLocal = _chainTimers.isNotEmpty || _savingSlots;
+    final known = <int, int>{};
+    for (final b in letters) {
+      final local = _slots[b.id];
+      final slot = (keepLocal ? local : null) ?? b.slot ?? local;
+      if (slot != null) known[b.id] = slot;
+    }
+    return assignSlots(
+      known,
+      letters.map((b) => b.id).toList(),
+      reserved: _vanishing.toSet().difference(known.values.toSet()),
+    );
+  }
+
+  /* ---------- 물고기 ---------- */
+
+  /// 다음 물고기는 20~40초 뒤에 온다.
+  void _scheduleFish() {
+    _fishTimer?.cancel();
+    _fishTimer = Timer(Duration(seconds: 20 + _random.nextInt(21)), _sendFish);
+  }
+
+  void _sendFish() {
+    if (!mounted) return;
+    final letters = _sea?.letters.take(10).toList() ?? const <Bottle>[];
+    final onTop = ModalRoute.of(context)?.isCurrent ?? true;
+    final drawerOpen = _scaffoldKey.currentState?.isDrawerOpen ?? false;
+    final aside = (widget.seaShift?.value ?? 0).abs() > 1; // 공유 바다를 보고 있다
+    final still = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final life = WidgetsBinding.instance.lifecycleState;
+    final away = life != null && life != AppLifecycleState.resumed;
+    // 유리병이 없거나, 다른 화면·창·편지가 열려 있거나, "움직임 줄이기"가 켜져 있으면 다음으로 미룬다.
+    if (letters.isEmpty ||
+        !onTop ||
+        drawerOpen ||
+        aside ||
+        still ||
+        away ||
+        _loading ||
+        _opening ||
+        _openingMail ||
+        _detailOpen ||
+        _vanishing.isNotEmpty ||
+        _chainTimers.isNotEmpty) {
+      _scheduleFish();
+      return;
+    }
+    final slot = _slots[letters[_random.nextInt(letters.length)].id];
+    if (slot == null) {
+      _scheduleFish();
+      return;
+    }
+    // 왼쪽이나 오른쪽에서, 살짝 비스듬히 지나간다.
+    final side = _random.nextBool() ? 1.0 : -1.0;
+    final angle = (_random.nextDouble() * 36 - 18) * math.pi / 180;
+    setState(() {
+      _fishHit = false;
+      _fishRun = FishRun(
+        slot: slot,
+        direction: Offset(side * math.cos(angle), math.sin(angle)),
+      );
+    });
+    _fish.forward(from: 0);
+  }
+
+  void _onFishTick() {
+    final run = _fishRun;
+    if (run == null || _fishHit || _fish.value < FishRun.hitAt) return;
+    _fishHit = true;
+    _nudge(run);
+  }
+
+  void _onFishStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed || !mounted) return;
+    setState(() => _fishRun = null);
+    _scheduleFish();
+  }
+
+  /// 물고기가 들이받은 유리병을 밀고, 가는 길에 있는 유리병들도 차례로 밀려나게 한 뒤 자리를 저장한다.
+  void _nudge(FishRun run) {
+    final ids =
+        _sea?.letters.take(10).map((b) => b.id).toSet() ?? const <int>{};
+    final idAt = <int, int>{
+      for (final e in _slots.entries)
+        if (ids.contains(e.key)) e.value: e.key,
+    };
+    if (!idAt.containsKey(run.slot)) return; // 그 사이 유리병이 사라졌다
+    final moves = pushChain(
+      start: run.slot,
+      direction: run.direction,
+      occupied: idAt.keys.toSet(),
+    );
+    if (moves.isEmpty) return;
+    for (var i = 0; i < moves.length; i++) {
+      final move = moves[i];
+      final id = idAt[move.from]!;
+      final lean =
+          BottleField.slots[move.to].dx >= BottleField.slots[move.from].dx
+          ? 1.0
+          : -1.0;
+      void apply() {
+        if (!mounted) return;
+        setState(() {
+          _slots[id] = move.to;
+          _nudges[id] = (_nudges[id] ?? 0) + 1;
+          _leans[id] = lean;
+        });
+      }
+
+      // 앞 유리병이 다가오는 만큼 조금씩 늦게 밀려난다.
+      if (i == 0) {
+        apply();
+      } else {
+        _chainTimers.add(Timer(Duration(milliseconds: 320 * i), apply));
+      }
+    }
+    _chainTimers.add(
+      Timer(Duration(milliseconds: 320 * (moves.length - 1)), () {
+        _chainTimers.clear();
+        _saveSlots();
+      }),
+    );
+  }
+
+  /// 바뀐 자리를 서버에 저장한다. 다시 켜도, 다른 사람이 내 바다를 방문해도 같은 자리에 보인다.
+  /// 저장하지 못하면 화면은 그대로 두고, 다음에 바다를 불러올 때 서버의 자리로 돌아간다.
+  Future<void> _saveSlots() async {
+    final ids = _sea?.letters.take(10).map((b) => b.id) ?? const <int>[];
+    final slots = <int, int>{
+      for (final id in ids)
+        if (_slots[id] != null) id: _slots[id]!,
+    };
+    if (slots.isEmpty) return;
+    _savingSlots = true;
+    try {
+      await widget.services.letters.saveSeaSlots(slots);
+    } on ApiException catch (_) {
+      // 자리 저장은 꾸밈이라 실패해도 안내하지 않는다.
+    } finally {
+      _savingSlots = false;
     }
   }
 
@@ -542,16 +716,30 @@ class _SeaScreenState extends State<SeaScreen>
         ],
       );
     }
-    return _vanishLayer(letters);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // 물고기는 유리병 아래로 지나간다.
+        if (_fishRun != null)
+          FishLayer(
+            key: const Key('sea-fish'),
+            run: _fishRun!,
+            progress: _fish,
+          ),
+        _vanishLayer(letters),
+      ],
+    );
   }
 
-  /// 유리병들과 사라지는 효과. 자리는 병마다 고정이라 한 병이 사라져도 나머지는 움직이지 않는다.
+  /// 유리병들과 사라지는 효과. 한 병이 사라져도 나머지는 제자리에 있다(자리는 물고기가 밀 때만 바뀐다).
   Widget _vanishLayer(List<Bottle> letters) {
     return BottleField(
       animation: _anim,
       slotOf: [for (final b in letters) _slots[b.id] ?? 0],
       keyOf: (i) => Key('bottle-${letters[i].id}'),
       onTap: (i) => _openBottle(letters[i]),
+      nudgeOf: (i) => _nudges[letters[i].id] ?? 0,
+      leanOf: (i) => _leans[letters[i].id] ?? 1,
       vanishing: List.of(_vanishing),
       onVanished: (slot) {
         if (mounted) setState(() => _vanishing.remove(slot));
