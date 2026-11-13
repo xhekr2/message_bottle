@@ -5,7 +5,7 @@
     <!-- Dev/demo: the LAN server is plain HTTP -->
     <application
         android:usesCleartextTraffic="true"
-        android:label="message_bottle_frontend"
+        android:label="Message Bottle"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

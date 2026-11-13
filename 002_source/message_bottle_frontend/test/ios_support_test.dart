@@ -92,6 +92,42 @@ void main() {
       expect(appDelegate, contains('"isOnline"'));
     });
 
+    test('앱 이름은 Android와 iOS 모두 Message Bottle이다', () {
+      expect(
+        valueAfter(plist, 'CFBundleDisplayName'),
+        startsWith('<string>Message Bottle</string>'),
+      );
+      expect(
+        File('android/app/src/main/AndroidManifest.xml').readAsStringSync(),
+        contains('android:label="Message Bottle"'),
+      );
+    });
+
+    test('앱 아이콘이 Android(적응형 포함)와 iOS에 모두 들어 있다', () {
+      const res = 'android/app/src/main/res';
+      final adaptive = File(
+        '$res/mipmap-anydpi-v26/ic_launcher.xml',
+      ).readAsStringSync();
+      expect(adaptive, contains('@mipmap/ic_launcher_background'));
+      expect(adaptive, contains('@mipmap/ic_launcher_foreground'));
+      for (final d in ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']) {
+        for (final n in ['', '_background', '_foreground']) {
+          final file = File('$res/mipmap-$d/ic_launcher$n.png');
+          expect(file.existsSync(), isTrue, reason: file.path);
+          expect(file.lengthSync(), greaterThan(200), reason: file.path);
+        }
+      }
+      // iOS 아이콘 세트가 가리키는 파일이 모두 있다.
+      const set = 'ios/Runner/Assets.xcassets/AppIcon.appiconset';
+      final names = RegExp(
+        r'"filename"\s*:\s*"([^"]+)"',
+      ).allMatches(File('$set/Contents.json').readAsStringSync());
+      expect(names, isNotEmpty);
+      for (final m in names) {
+        expect(File('$set/${m[1]}').existsSync(), isTrue, reason: m[1]);
+      }
+    });
+
     test('Swift 파일이 모두 Xcode 프로젝트에 들어 있다', () {
       for (final file in Directory('ios/Runner').listSync()) {
         final name = file.uri.pathSegments.last;

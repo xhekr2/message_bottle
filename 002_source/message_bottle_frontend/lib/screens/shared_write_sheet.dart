@@ -76,7 +76,10 @@ class _SharedWriteSheetState extends State<SharedWriteSheet> {
       },
       child: Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
+          // viewInsets: keyboard, padding: system navigation bar (hidden behind the keyboard while it is open)
+          bottom:
+              MediaQuery.viewInsetsOf(context).bottom +
+              MediaQuery.paddingOf(context).bottom,
         ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
