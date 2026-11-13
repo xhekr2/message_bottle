@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'bottle_icon.dart';
 
-/// 편지 id마다 자리(0~9)를 정한다. 이미 자리가 있는 유리병은 그 자리를 지키고,
+/// 편지 id마다 자리(0~10)를 정한다. 이미 자리가 있는 유리병은 그 자리를 지키고,
 /// 새로 온 유리병만 비어 있는 가장 앞 자리에 놓는다. [reserved]는 쓰지 못하는 자리(사라지는 중인 자리).
 /// 그래서 한 병이 사라져도 나머지 병은 움직이지 않는다.
 Map<int, int> assignSlots(
@@ -33,7 +33,7 @@ Map<int, int> assignSlots(
   return result;
 }
 
-/// 바다에 떠 있는 유리병들. 자리 10곳(390x844 기준 좌표)은 서로 겹치지 않고
+/// 바다에 떠 있는 유리병들. 자리 11곳(390x844 기준 좌표)은 서로 겹치지 않고
 /// 우상단 버튼·"편지 쓰기" 버튼과도 겹치지 않는다. [onTap]이 없으면 누를 수 없는 그림이다(다른 사람의 바다).
 class BottleField extends StatelessWidget {
   const BottleField({
@@ -44,6 +44,8 @@ class BottleField extends StatelessWidget {
     this.onTap,
     this.vanishing = const [],
     this.onVanished,
+    this.nudgeOf,
+    this.leanOf,
   });
 
   static const slots = <Offset>[
@@ -57,11 +59,12 @@ class BottleField extends StatelessWidget {
     Offset(40, 310),
     Offset(150, 180),
     Offset(310, 610),
+    Offset(50, 570),
   ];
 
   final Animation<double> animation;
 
-  /// 유리병마다 놓을 자리 번호(0~9). 길이가 그릴 유리병 수다.
+  /// 유리병마다 놓을 자리 번호(0~10). 길이가 그릴 유리병 수다.
   final List<int> slotOf;
   final Key Function(int index)? keyOf;
   final void Function(int index)? onTap;
@@ -70,29 +73,38 @@ class BottleField extends StatelessWidget {
   final List<int> vanishing;
   final void Function(int slot)? onVanished;
 
+  /// 유리병마다 밀린 횟수와 기울 방향(물고기가 밀었을 때). 횟수가 바뀌면 그 유리병이 한 번 기우뚱한다.
+  final int Function(int index)? nudgeOf;
+  final double Function(int index)? leanOf;
+
+  /// 자리가 바뀐 유리병이 새 자리로 미끄러져 가는 시간.
+  static const moveDuration = Duration(milliseconds: 1400);
+  static const moveCurve = Cubic(0.22, 0.7, 0.3, 1);
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, c) {
-        final sx = c.maxWidth / 390;
-        final sy = c.maxHeight / 844;
-        final scale = sx.clamp(0.8, 1.2).toDouble();
-        final bw = 56 * scale, bh = 100 * scale;
-        double left(int slot) => (slots[slot].dx * sx).clamp(
-          4.0,
-          math.max(4.0, c.maxWidth - bw - 4),
-        );
-        double top(int slot) => slots[slot].dy * sy;
+        final g = BottleGeometry(Size(c.maxWidth, c.maxHeight));
+        final bw = g.width, bh = g.height;
+        double left(int slot) => g.topLeft(slot).dx;
+        double top(int slot) => g.topLeft(slot).dy;
         return Stack(
           clipBehavior: Clip.none,
           children: [
             for (var i = 0; i < slotOf.length; i++)
               if (slotOf[i] >= 0 && slotOf[i] < slots.length)
-                Positioned(
+                AnimatedPositioned(
+                  // 자리가 바뀌어도 같은 유리병으로 알아보도록 유리병마다 열쇠를 준다.
+                  key: ValueKey<Object>(('at', keyOf?.call(i) ?? i)),
+                  duration: moveDuration,
+                  curve: moveCurve,
                   left: left(slotOf[i]),
                   top: top(slotOf[i]),
                   child: _FloatingBottle(
                     key: keyOf?.call(i),
+                    nudge: nudgeOf?.call(i) ?? 0,
+                    lean: leanOf?.call(i) ?? 1,
                     animation: animation,
                     phase: slotOf[i] * 0.13,
                     tilt: ((slotOf[i] % 5) - 2) * 0.07,
@@ -237,8 +249,12 @@ class _FloatingBottle extends StatelessWidget {
     required this.width,
     required this.height,
     required this.onTap,
+    this.nudge = 0,
+    this.lean = 1,
   });
 
+  final int nudge;
+  final double lean;
   final Animation<double> animation;
   final double phase;
   final double tilt;
@@ -253,7 +269,7 @@ class _FloatingBottle extends StatelessWidget {
       height: height,
       child: BottleIcon(width: width, height: height),
     );
-    return AnimatedBuilder(
+    final floating = AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
         final t = animation.value * 2 * math.pi + phase * 2 * math.pi;
@@ -277,5 +293,37 @@ class _FloatingBottle extends StatelessWidget {
               ),
             ),
     );
+    if (nudge == 0) return floating;
+    // 밀렸을 때 한 번 기우뚱했다가 잦아든다(밀린 횟수가 바뀔 때마다 처음부터).
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(nudge),
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 1700),
+      child: floating,
+      builder: (context, t, child) => Transform.rotate(
+        angle: lean * 0.28 * math.sin(t * 3 * math.pi) * (1 - t),
+        child: child,
+      ),
+    );
   }
+}
+
+/// 화면 크기에 맞춘 유리병의 크기와 자리 좌표. 유리병과 물고기가 같은 계산을 쓴다.
+class BottleGeometry {
+  BottleGeometry(this.size)
+    : scale = (size.width / 390).clamp(0.8, 1.2).toDouble();
+
+  final Size size;
+  final double scale;
+
+  double get width => 56 * scale;
+  double get height => 100 * scale;
+
+  Offset topLeft(int slot) => Offset(
+    (BottleField.slots[slot].dx * size.width / 390).clamp(
+      4.0,
+      math.max(4.0, size.width - width - 4),
+    ),
+    BottleField.slots[slot].dy * size.height / 844,
+  );
 }

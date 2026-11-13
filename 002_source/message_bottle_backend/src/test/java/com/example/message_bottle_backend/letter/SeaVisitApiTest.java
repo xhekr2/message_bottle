@@ -118,7 +118,7 @@ class SeaVisitApiTest {
         MvcResult r = getAs(carol, "/api/sea/users/Bob123");
 
         assertEquals(200, r.getResponse().getStatus());
-        assertEquals("{\"username\":\"Bob123\",\"floatingCount\":3}", body(r), "아이디와 개수 외에는 아무것도 없다");
+        assertEquals("{\"username\":\"Bob123\",\"floatingCount\":3,\"slots\":[0,1,2]}", body(r), "아이디·개수·자리 번호 외에는 아무것도 없다");
         String b = body(r);
         assertFalse(b.contains("content") || b.contains("비밀") || b.contains("Alice1") || b.contains("sentAt") || b.contains("\"id\""));
     }
@@ -129,7 +129,7 @@ class SeaVisitApiTest {
         for (int i = 0; i < 12; i++) {
             send(alice, bob, "편지" + i, false); // 10개는 떠 있고 2개는 대기
         }
-        assertEquals("{\"username\":\"Bob123\",\"floatingCount\":10}", body(getAs(carol, "/api/sea/users/Bob123")), "대기 편지는 세지 않는다");
+        assertTrue(body(getAs(carol, "/api/sea/users/Bob123")).startsWith("{\"username\":\"Bob123\",\"floatingCount\":10,\"slots\":["), "대기 편지는 세지 않는다");
 
         // 보관·버리기·만료된 편지도 세지 않는다
         long a = send(alice, carol, "x", false);
@@ -140,7 +140,7 @@ class SeaVisitApiTest {
         jdbc.update("update letters set expires_at = ? where id = ?", LocalDateTime.now().minusMinutes(1), floating.get(2).getId());
 
         // 10 - 버림 1 - 보관 1 - 만료 1 + 대기 중이던 2통 중 빈자리로 올라간 것(버림·보관 때 2통 승격) = 9
-        assertEquals("{\"username\":\"Bob123\",\"floatingCount\":9}", body(getAs(carol, "/api/sea/users/Bob123")));
+        assertTrue(body(getAs(carol, "/api/sea/users/Bob123")).startsWith("{\"username\":\"Bob123\",\"floatingCount\":9,\"slots\":["));
     }
 
     @Test
@@ -154,7 +154,7 @@ class SeaVisitApiTest {
 
         MvcResult asOwner = getAs(bob, "/api/sea/users/Bob123");
         assertEquals(200, asOwner.getResponse().getStatus(), "자기 바다는 비공개여도 볼 수 있다");
-        assertEquals("{\"username\":\"Bob123\",\"floatingCount\":1}", body(asOwner));
+        assertTrue(body(asOwner).startsWith("{\"username\":\"Bob123\",\"floatingCount\":1,\"slots\":["));
     }
 
     @Test

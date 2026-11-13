@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:message_bottle_frontend/app_services.dart';
@@ -120,5 +121,33 @@ void main() {
     services.client.onNetworkError?.call();
     await settle(tester, ms: 300);
     expect(find.byKey(const Key('offline-dialog')), findsOneWidget);
+  });
+
+  testWidgets('iOS에서는 앱을 종료할 수 없으므로 종료 대신 다시 시도를 보여 주고, 연결이 돌아오면 닫는다', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await pumpApp(tester, server());
+      offline = true;
+      await settle(tester, ms: 3500);
+
+      expect(find.byKey(const Key('offline-dialog')), findsOneWidget);
+      expect(find.byKey(const Key('offline-exit')), findsNothing);
+      expect(find.text('Wi-Fi나 데이터 연결을 확인한 뒤 다시 시도해 주세요.'), findsOneWidget);
+
+      // 아직 끊겨 있으면 창이 그대로 있다.
+      await tester.tap(find.byKey(const Key('offline-retry')));
+      await settle(tester, ms: 300);
+      expect(find.byKey(const Key('offline-still')), findsOneWidget);
+      expect(exits, 0);
+
+      offline = false;
+      await settle(tester, ms: 4000);
+      expect(find.byKey(const Key('offline-dialog')), findsNothing);
+      expect(exits, 0);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 }

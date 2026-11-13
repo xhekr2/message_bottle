@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../api/api_exception.dart';
@@ -132,7 +130,8 @@ class _VisitSeaScreenState extends State<VisitSeaScreen>
           children: [
             BottleField(
               animation: _anim,
-              slotOf: List<int>.generate(math.min(count, 10), (i) => i),
+              // 주인이 보는 자리 그대로(서버에 저장된 자리).
+              slotOf: _sea!.slots.take(10).toList(),
             ),
             Align(
               alignment: const Alignment(0, 0.72),

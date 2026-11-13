@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,13 +13,14 @@ const _networkChannel = MethodChannel('message_bottle/network');
 
 /// 기기에 네트워크 연결(Wi-Fi·데이터)이 하나도 없으면 true.
 /// 서버만 꺼져 있고 기기는 연결돼 있는 경우는 false다(그때는 각 화면의 "다시 시도"가 안내한다).
-/// Android에서는 기기의 연결 상태를 직접 묻고(MainActivity.kt), 그 밖에서는 네트워크 장치가 있는지로 판단한다.
+/// Android(MainActivity.kt)와 iOS(AppDelegate.swift)에서는 기기의 연결 상태를 직접 묻고,
+/// 그 밖에서는 네트워크 장치가 있는지로 판단한다.
 Future<bool> deviceOffline() async {
   try {
     final online = await _networkChannel.invokeMethod<bool>('isOnline');
     if (online != null) return !online;
   } on MissingPluginException {
-    // Android가 아닌 곳: 아래 방법으로 판단한다.
+    // Android·iOS가 아닌 곳: 아래 방법으로 판단한다.
   } on PlatformException {
     return false;
   }
@@ -34,6 +36,10 @@ Future<bool> deviceOffline() async {
 void exitApplication() {
   SystemNavigator.pop();
 }
+
+/// 앱이 스스로 종료할 수 있는 기기인지. iOS는 앱이 스스로 종료할 수 없어서
+/// (SystemNavigator.pop이 무시된다) 종료 대신 "다시 시도"를 보여 준다.
+bool get canExitApp => defaultTargetPlatform != TargetPlatform.iOS;
 
 /// 네트워크가 끊기면 안내 창을 띄운다. 확인을 누르면 앱을 종료한다.
 /// 단, 바다에서 연 편지가 열려 있는 동안에는 종료하지 않고 "다시 시도"만 보여 준다
@@ -108,6 +114,7 @@ class _NetworkGuardState extends State<NetworkGuard> {
       barrierDismissible: false,
       builder: (_) => _OfflineDialog(
         keepLetter: widget.services.letterOpen.value,
+        canExit: canExitApp,
         offline: _offline,
         probe: _probe,
         onExit: widget.services.exitApp ?? exitApplication,
@@ -123,6 +130,7 @@ class _NetworkGuardState extends State<NetworkGuard> {
 class _OfflineDialog extends StatefulWidget {
   const _OfflineDialog({
     required this.keepLetter,
+    required this.canExit,
     required this.offline,
     required this.probe,
     required this.onExit,
@@ -130,6 +138,12 @@ class _OfflineDialog extends StatefulWidget {
 
   /// 편지를 열어 둔 상태라 종료하지 않고 다시 시도하게 한다.
   final bool keepLetter;
+
+  /// 앱이 스스로 종료할 수 있는 기기인지(iOS는 false).
+  final bool canExit;
+
+  /// 종료 버튼 대신 "다시 시도"를 보여 주고, 연결이 돌아오면 창을 저절로 닫는다.
+  bool get retryOnly => keepLetter || !canExit;
   final ValueNotifier<bool> offline;
   final Future<bool> Function() probe;
   final VoidCallback onExit;
@@ -154,9 +168,9 @@ class _OfflineDialogState extends State<_OfflineDialog> {
     super.dispose();
   }
 
-  /// 편지를 열어 둔 경우에는 연결이 돌아오면 창을 저절로 닫는다.
+  /// 종료하지 않는 경우에는 연결이 돌아오면 창을 저절로 닫는다.
   void _onChanged() {
-    if (widget.keepLetter && !widget.offline.value && mounted) {
+    if (widget.retryOnly && !widget.offline.value && mounted) {
       Navigator.of(context).pop();
     }
   }
@@ -196,7 +210,9 @@ class _OfflineDialogState extends State<_OfflineDialog> {
             Text(
               widget.keepLetter
                   ? '열어 둔 편지는 그대로 있어요. 앱을 종료하지 않으니, 연결을 확인한 뒤 다시 시도해 주세요.'
-                  : 'Wi-Fi나 데이터 연결을 확인한 뒤 앱을 다시 실행해 주세요. 확인을 누르면 앱을 종료합니다.',
+                  : !widget.canExit
+                  ? 'Wi-Fi나 데이터 연결을 확인한 뒤 다시 시도해 주세요.'
+                  :'Wi-Fi나 데이터 연결을 확인한 뒤 앱을 다시 실행해 주세요. 확인을 누르면 앱을 종료합니다.',
               style: const TextStyle(height: 1.5),
             ),
             if (_still)
@@ -216,7 +232,7 @@ class _OfflineDialogState extends State<_OfflineDialog> {
         actions: [
           SizedBox(
             width: double.infinity,
-            child: widget.keepLetter
+            child: widget.retryOnly
                 ? FilledButton(
                     key: const Key('offline-retry'),
                     onPressed: _busy ? null : _retry,

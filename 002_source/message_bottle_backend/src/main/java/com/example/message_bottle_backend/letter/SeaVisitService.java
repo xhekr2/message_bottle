@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -35,8 +36,10 @@ public class SeaVisitService {
             throw new ApiException(HttpStatus.FORBIDDEN, "비공개 바다입니다.");
         }
         // 만료 시각이 지난 편지는 아직 정리되지 않았어도 세지 않는다.
-        long floating = letterRepository.countByReceiverIdAndStatusAndExpiresAtAfter(
+        List<Letter> floating = letterRepository.findByReceiverIdAndStatusAndExpiresAtAfterOrderBySentAtAscIdAsc(
                 owner.getId(), LetterStatus.FLOATING, LocalDateTime.now(clock));
-        return new PublicSeaResponse(owner.getUsername(), (int) floating);
+        // 주인이 보는 자리와 같은 규칙으로 정한다. 어느 편지의 자리인지 드러나지 않게 번호순으로 준다.
+        List<Integer> slots = SeaSlots.resolve(floating).values().stream().sorted().toList();
+        return new PublicSeaResponse(owner.getUsername(), slots.size(), slots);
     }
 }

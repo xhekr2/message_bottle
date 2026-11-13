@@ -20,6 +20,8 @@ public interface LetterRepository extends JpaRepository<Letter, Long> {
     @EntityGraph(attributePaths = {"sender", "receiver"})
     List<Letter> findByReceiverIdAndStatusOrderBySentAtAscIdAsc(Long receiverId, LetterStatus status);
 
+    List<Letter> findByReceiverIdAndStatusAndExpiresAtAfterOrderBySentAtAscIdAsc(Long receiverId, LetterStatus status, LocalDateTime now);
+
     /** 대기 편지를 최초 발송 시각이 빠른 순서(FIFO)로 */
     @Query("select l from Letter l where l.receiver.id = :receiverId and l.status = com.example.message_bottle_backend.letter.LetterStatus.WAITING "
             + "order by l.sentAt asc, l.id asc")

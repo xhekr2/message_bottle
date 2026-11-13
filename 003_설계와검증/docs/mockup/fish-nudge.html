@@ -1,0 +1,255 @@
+<title>물고기 장난 시안</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root {
+  --c-bg: #E9EEF3; --c-surface: #FFFFFF; --c-text: #12263A; --c-muted: #5A6B7B;
+  --c-line: #D6E3EE; --c-chip: #F4F8FB; --c-on: #0B5FA5; --c-on-text: #FFFFFF; --c-warn: #8A5A00; --c-warn-bg: #FFF4D6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-bg: #0E1822; --c-surface: #16232F; --c-text: #E6EEF5; --c-muted: #9FB1C1;
+    --c-line: #2B3C4A; --c-chip: #1E2E3B; --c-on: #5AA9E6; --c-on-text: #0E1822; --c-warn: #FFD98A; --c-warn-bg: #3A2E12;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --c-bg: #0E1822; --c-surface: #16232F; --c-text: #E6EEF5; --c-muted: #9FB1C1;
+  --c-line: #2B3C4A; --c-chip: #1E2E3B; --c-on: #5AA9E6; --c-on-text: #0E1822; --c-warn: #FFD98A; --c-warn-bg: #3A2E12;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--c-bg); color: var(--c-text);
+  font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, sans-serif;
+  font-size: 15px; line-height: 1.55;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 940px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; text-wrap: balance; }
+.lede { margin: 0 0 24px; color: var(--c-muted); max-width: 62ch; }
+.stage { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+.phone-slot { width: min(428px, 100%); flex: 0 0 auto; }
+.side { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.box { background: var(--c-surface); border: 1px solid var(--c-line); border-radius: 14px; padding: 16px; }
+.box h2 { font-size: 13px; margin: 0 0 10px; color: var(--c-muted); font-weight: 600; letter-spacing: .02em; }
+.box h2 + .seg + h2, .box .seg + h2 { margin-top: 16px; }
+.box p.hint { margin: 10px 0 0; font-size: 13px; color: var(--c-muted); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button {
+  font: inherit; font-size: 14px; min-height: 40px; padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--c-line); background: var(--c-chip); color: var(--c-text); cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--c-on); border-color: var(--c-on); color: var(--c-on-text); font-weight: 700; }
+.send { font: inherit; font-weight: 700; min-height: 48px; width: 100%; border-radius: 12px; border: 0; background: var(--c-on); color: var(--c-on-text); cursor: pointer; }
+.send:disabled { opacity: .55; cursor: default; }
+button:focus-visible { outline: 3px solid #7DB8E8; outline-offset: 2px; }
+.check { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 14px; min-height: 40px; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--c-on); }
+.notes { margin: 0; padding-left: 18px; font-size: 14px; }
+.notes li + li { margin-top: 6px; }
+.notes small { color: var(--c-muted); font-size: 13px; }
+.log { margin: 10px 0 0; font-size: 13px; color: var(--c-muted); min-height: 1.5em; }
+
+/* 휴대폰 화면: 앱의 아침바다 색 */
+.phone { box-sizing: content-box; width: 412px; height: 780px; transform-origin: top left; position: relative; overflow: hidden; border-radius: 34px; border: 8px solid #1B2733; background: linear-gradient(#CBE9F7, #7FBDE3 45%, #2F7FB8); color: #12263A; box-shadow: 0 18px 44px rgba(18,38,58,.28); }
+.phone::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 78% 12%, rgba(255,255,255,.75), transparent 55%); }
+.waves { position: absolute; left: 0; right: 0; bottom: 0; height: 150px; z-index: 3; pointer-events: none; }
+.waves svg { position: absolute; left: -40px; bottom: 0; width: 520px; height: 150px; animation: sway 7s ease-in-out infinite alternate; }
+.waves svg:nth-child(2) { animation-duration: 9s; animation-direction: alternate-reverse; }
+@keyframes sway { to { transform: translateX(34px); } }
+.tabs { position: absolute; top: 14px; left: 0; right: 0; display: flex; justify-content: center; z-index: 4; }
+.tab { padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 13px; color: #0E3150; opacity: .55; font-weight: 500; }
+.tab i { width: 6px; height: 4px; border-radius: 2px; background: #0E3150; opacity: .6; }
+.tab.on { opacity: 1; font-weight: 700; } .tab.on i { width: 18px; }
+.menu { position: absolute; left: 8px; top: 8px; width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.88); box-shadow: 0 2px 5px rgba(0,0,0,.2); display: grid; place-items: center; z-index: 4; }
+.menu svg, .chip svg, .fab svg { width: 20px; height: 20px; flex: none; }
+.chips { position: absolute; right: 12px; top: 70px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; z-index: 4; }
+.chip { min-height: 48px; padding: 6px 14px; display: flex; align-items: center; gap: 8px; border-radius: 24px; background: rgba(255,255,255,.88); box-shadow: 0 2px 5px rgba(0,0,0,.2); font-size: 14px; font-weight: 600; }
+.fab { position: absolute; right: 16px; bottom: 20px; min-height: 56px; padding: 8px 20px; border-radius: 28px; border: 3px solid #fff; background: #0B5FA5; color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 14px rgba(0,0,0,.3); z-index: 4; }
+
+/* 유리병: 자리(left/top)는 바깥, 떠다니는 흔들림은 안쪽이 맡는다 */
+.bottle { position: absolute; width: 56px; height: 100px; z-index: 2; cursor: pointer; }
+.bottle .bob { width: 100%; height: 100%; animation: bob 4.5s ease-in-out infinite; transform-origin: 50% 70%; }
+.bottle svg { width: 100%; height: 100%; display: block; }
+@keyframes bob { 50% { transform: translateY(-8px) rotate(2deg); } }
+.bottle.pushed .bob { animation: wobble var(--dur, 1s) ease-out 1; }
+@keyframes wobble { 0% { transform: rotate(0); } 12% { transform: rotate(calc(var(--lean, 1) * -16deg)); } 40% { transform: rotate(calc(var(--lean, 1) * 10deg)); } 70% { transform: rotate(calc(var(--lean, 1) * -4deg)); } 100% { transform: rotate(0); } }
+.b-glass { fill: rgba(255,255,255,.55); stroke: #fff; stroke-width: 3; } .b-note { fill: #FFF6DD; stroke: #CDB98A; stroke-width: 1.5; } .b-cork { fill: #B98B58; }
+
+/* 물고기 */
+.fish { position: absolute; left: 0; top: 0; width: 64px; height: 30px; margin: -15px 0 0 -32px; z-index: 1; pointer-events: none; will-change: transform; }
+.fish svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.fish .tail { transform-origin: 14px 15px; animation: tail .32s ease-in-out infinite alternate; }
+@keyframes tail { from { transform: rotate(-16deg); } to { transform: rotate(16deg); } }
+.fish.shadow .body, .fish.shadow .tail { fill: rgba(14,49,80,.30); } .fish.shadow .eye, .fish.shadow .fin { display: none; }
+.fish.shadow { filter: blur(.8px); }
+.fish.clear .body { fill: #F4A261; } .fish.clear .tail { fill: #E76F51; } .fish.clear .fin { fill: #E76F51; } .fish.clear .eye { fill: #12263A; }
+.ring { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 2px solid rgba(255,255,255,.9); z-index: 1; pointer-events: none; animation: ring .9s ease-out forwards; }
+@keyframes ring { from { transform: scale(.4); opacity: .9; } to { transform: scale(4.2); opacity: 0; } }
+.slotdot { position: absolute; width: 10px; height: 10px; margin: 60px 0 0 23px; border-radius: 50%; border: 2px dashed rgba(14,49,80,.45); z-index: 1; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .bottle .bob, .waves svg, .fish .tail { animation: none; } }
+</style>
+
+<div class="wrap">
+  <h1>물고기 장난 시안</h1>
+  <p class="lede">내 바다에 유리병이 떠 있을 때, 어쩌다 한 번 물고기가 지나가며 유리병 하나를 툭 건드리면 그 유리병이 쓔웅 밀려나 다른 자리로 가는 움직임입니다. "물고기 보내기"를 눌러 보세요. 확정된 규칙대로 앱에 적용했습니다.</p>
+
+  <div class="stage">
+    <div class="phone-slot" id="slot">
+      <div class="phone" id="phone">
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+          <symbol id="bottle" viewBox="0 0 54 100">
+            <rect class="b-cork" x="19" y="2" width="16" height="11" rx="2"/>
+            <path class="b-glass" d="M20 12h14v14c9 5 14 12 14 22v38a10 10 0 01-10 10H16A10 10 0 016 86V48c0-10 5-17 14-22z"/>
+            <rect class="b-note" x="17" y="44" width="20" height="38" rx="4" transform="rotate(-6 27 63)"/>
+          </symbol>
+        </svg>
+        <div id="dots"></div>
+        <div class="fish shadow" id="fish" hidden>
+          <svg viewBox="0 0 64 30"><path class="tail" d="M14 15L0 3v24z"/><path class="body" d="M10 15C18 3 44 1 62 15 44 29 18 27 10 15z"/><path class="fin" d="M30 6l8-5 2 7z"/><circle class="eye" cx="50" cy="12.5" r="2.2"/></svg>
+        </div>
+        <div id="bottles"></div>
+        <div class="waves" aria-hidden="true">
+          <svg viewBox="0 0 520 150" preserveAspectRatio="none"><path fill="#559DCF" d="M0 30q65-22 130 0t130 0 130 0 130 0v120H0z"/><path fill="#2A72A6" d="M0 86q65 22 130 0t130 0 130 0 130 0v64H0z"/></svg>
+          <svg viewBox="0 0 520 150" preserveAspectRatio="none"><path fill="#3F8CB5" d="M0 60q65 20 130 0t130 0 130 0 130 0v90H0z"/><path fill="#1B5786" d="M0 116q65-18 130 0t130 0 130 0 130 0v34H0z"/></svg>
+        </div>
+        <div class="tabs"><span class="tab on">내 바다<i></i></span><span class="tab">공유 바다<i></i></span></div>
+        <div class="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div>
+        <div class="chips">
+          <div class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4l18 8-18 8 3-8z"/></svg>보낸 편지함</div>
+          <div class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 14h4l1 2h6l1-2h4"/></svg>받은 편지함</div>
+        </div>
+        <div class="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>편지 쓰기</div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="box">
+        <button class="send" id="send">물고기 보내기</button>
+        <label class="check"><input type="checkbox" id="auto"> 저절로 가끔 지나가게 (시안에서는 6~10초마다, 앱에서는 20~40초마다)</label>
+        <p class="log" id="log" aria-live="polite"></p>
+      </div>
+      <div class="box">
+        <h2>유리병 개수</h2>
+        <div class="seg" id="countSeg">
+          <button data-n="1" aria-pressed="false">1개</button>
+          <button data-n="4" aria-pressed="true">4개</button>
+          <button data-n="7" aria-pressed="false">7개</button>
+          <button data-n="10" aria-pressed="false">10개 (가득)</button>
+        </div>
+        <label class="check"><input type="checkbox" id="showSlots"> 빈자리 보기 (유리병 자리 11곳)</label>
+      </div>
+      <div class="box">
+        <h2>확정한 규칙 (앱에 적용됨)</h2>
+        <ul class="notes">
+          <li><b>자리는 11곳</b>: 유리병은 최대 10개라 언제나 한 곳 이상이 비어 있습니다. <small>10개가 가득이어도 반드시 움직입니다.</small></li>
+          <li><b>밀치기</b>: 밀린 유리병은 밀린 방향 쪽 가장 가까운 자리로 갑니다. 그 자리에 유리병이 있으면 밀치고 자리를 차지하고, 밀려난 유리병도 같은 식으로 다음 자리로 갑니다. 빈자리에 닿으면 끝납니다.</li>
+          <li><b>물고기</b>: 물속 그림자 모습이고, 앱에서는 20~40초에 한 번 지나갑니다. 밀려나는 움직임은 부드럽게 1.4초입니다.</li>
+          <li><b>나오지 않는 때</b>: 유리병이 없을 때, 편지나 다른 창을 열어 둔 동안, 공유 바다, 기기의 "움직임 줄이기"가 켜져 있을 때.</li>
+          <li><b>자리 저장</b>: 바뀐 자리는 서버에 저장됩니다. 앱을 다시 켜도 그대로이고, 공개 바다를 방문한 사람도 주인이 보는 자리 그대로 봅니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var W = 412, H = 780, SX = W / 390, SY = H / 844;
+  var SLOTS = [[60,200],[250,260],[130,380],[250,490],[30,430],[170,560],[300,370],[40,310],[150,180],[310,610],[50,570]];
+  var phone = document.getElementById('phone'), slotEl = document.getElementById('slot');
+  var layer = document.getElementById('bottles'), dots = document.getElementById('dots');
+  var fish = document.getElementById('fish'), log = document.getElementById('log'), send = document.getElementById('send');
+  var st = { bottles: [], busy: false, push: 'soft', auto: false, timer: 0 };
+  function $$(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }
+  function press(sel, test) { $$(sel).forEach(function (b) { b.setAttribute('aria-pressed', test(b) ? 'true' : 'false'); }); }
+  function pos(slot) { return { x: Math.min(W - 60, Math.max(4, SLOTS[slot][0] * SX)), y: SLOTS[slot][1] * SY }; }
+  function fit() { var s = Math.min(1, slotEl.clientWidth / 428); phone.style.transform = 'scale(' + s + ')'; slotEl.style.height = (796 * s) + 'px'; }
+  window.addEventListener('resize', fit); fit();
+
+  SLOTS.forEach(function (_, i) { var d = document.createElement('div'); d.className = 'slotdot'; var p = pos(i); d.style.left = p.x + 'px'; d.style.top = p.y + 'px'; dots.appendChild(d); });
+  dots.hidden = true;
+
+  function setCount(n) {
+    layer.innerHTML = ''; st.bottles = [];
+    for (var i = 0; i < n; i++) {
+      var el = document.createElement('div'); el.className = 'bottle';
+      el.innerHTML = '<div class="bob" style="animation-delay:' + (-i * 0.6) + 's"><svg><use href="#bottle"/></svg></div>';
+      var p = pos(i); el.style.left = p.x + 'px'; el.style.top = p.y + 'px';
+      el.addEventListener('click', function () { log.textContent = '유리병을 눌렀어요. (앱에서는 편지가 열립니다)'; });
+      layer.appendChild(el); st.bottles.push({ el: el, slot: i });
+    }
+  }
+  function ring(x, y) { var r = document.createElement('div'); r.className = 'ring'; r.style.left = x + 'px'; r.style.top = y + 'px'; phone.appendChild(r); setTimeout(function () { r.remove(); }, 950); }
+
+  function sendFish() {
+    if (st.busy || !st.bottles.length) return;
+    st.busy = true; send.disabled = true;
+    var b = st.bottles[Math.floor(Math.random() * st.bottles.length)];
+    var p = pos(b.slot), T = { x: p.x + 28, y: p.y + 66 };        // 유리병 몸통 아래쪽을 들이받는다
+    var dir = Math.random() < 0.5 ? 1 : -1, ang = (Math.random() * 36 - 18) * Math.PI / 180;
+    var u = { x: dir * Math.cos(ang), y: Math.sin(ang) };
+    var S = { x: T.x - u.x * 520, y: T.y - u.y * 520 }, speed = 250, t0 = performance.now(), hit = false;
+    var deg = Math.atan2(u.y, u.x) * 180 / Math.PI;
+    fish.hidden = false; log.textContent = '물고기가 지나가요…';
+    function step(ms) {
+      var d = (ms - t0) / 1000 * speed, x = S.x + u.x * d, y = S.y + u.y * d;
+      // 오른쪽을 보는 그림이므로 왼쪽으로 갈 때는 위아래를 뒤집어 등이 위로 오게 한다.
+      fish.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + deg + 'deg)' + (dir < 0 ? ' scaleY(-1)' : '');
+      if (!hit && d >= 520 - 30) { hit = true; nudge(b, T, u); }
+      if (d < 1100) requestAnimationFrame(step); else { fish.hidden = true; st.busy = false; send.disabled = false; plan(); }
+    }
+    requestAnimationFrame(step);
+  }
+
+  // 밀린 방향 쪽 가장 가까운 자리로 간다. 그 자리에 유리병이 있으면 밀치고, 밀려난 유리병도 같은 식으로 간다.
+  function chain(start, u) {
+    var bySlot = {}; st.bottles.forEach(function (o) { bySlot[o.slot] = o; });
+    var moves = [], visited = {}, cur = start, d = u; visited[start] = true;
+    while (true) {
+      var next = -1, nLen = Infinity, nAhead = false;
+      for (var i = 0; i < SLOTS.length; i++) {
+        if (visited[i]) continue;
+        var vx = SLOTS[i][0] - SLOTS[cur][0], vy = SLOTS[i][1] - SLOTS[cur][1], len = Math.hypot(vx, vy);
+        var ahead = (vx * d.x + vy * d.y) / len > 0.2;
+        if (next < 0 || (ahead && !nAhead) || (ahead === nAhead && len < nLen)) { next = i; nLen = len; nAhead = ahead; }
+      }
+      if (next < 0) return moves;
+      moves.push({ bottle: bySlot[cur], to: next, lean: SLOTS[next][0] >= SLOTS[cur][0] ? 1 : -1 });
+      if (!bySlot[next]) return moves;
+      d = { x: (SLOTS[next][0] - SLOTS[cur][0]) / nLen, y: (SLOTS[next][1] - SLOTS[cur][1]) / nLen };
+      visited[next] = true; cur = next;
+    }
+  }
+
+  function nudge(b, T, u) {
+    ring(T.x, T.y);
+    var moves = chain(b.slot, u), dur = 1.4, ease = 'cubic-bezier(.22,.7,.3,1)';
+    moves.forEach(function (m, i) {
+      setTimeout(function () {
+        var el = m.bottle.el, to = pos(m.to);
+        el.style.setProperty('--dur', (dur + 0.3) + 's'); el.style.setProperty('--lean', m.lean);
+        el.classList.remove('pushed'); void el.offsetWidth; el.classList.add('pushed');
+        el.style.transition = 'left ' + dur + 's ' + ease + ', top ' + dur + 's ' + ease;
+        el.style.left = to.x + 'px'; el.style.top = to.y + 'px'; m.bottle.slot = m.to;
+      }, 320 * i);
+    });
+    log.textContent = moves.length > 1 ? '툭! 유리병 ' + moves.length + '개가 차례로 밀려났어요.' : '툭! 유리병이 다른 자리로 밀려났어요.';
+  }
+
+  function plan() { clearTimeout(st.timer); if (st.auto) st.timer = setTimeout(sendFish, 6000 + Math.random() * 4000); }
+
+  send.addEventListener('click', sendFish);
+  document.getElementById('auto').addEventListener('change', function (e) { st.auto = e.target.checked; plan(); });
+  document.getElementById('showSlots').addEventListener('change', function (e) { dots.hidden = !e.target.checked; });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('#countSeg button'); if (b) { if (st.busy) return; setCount(+b.dataset.n); press('#countSeg button', function (x) { return x === b; }); return; }
+    b = e.target.closest('#lookSeg button'); if (b) { fish.className = 'fish ' + b.dataset.look; press('#lookSeg button', function (x) { return x === b; }); return; }
+    b = e.target.closest('#pushSeg button'); if (b) { st.push = b.dataset.push; press('#pushSeg button', function (x) { return x === b; }); }
+  });
+  setCount(4);
+})();
+</script>
